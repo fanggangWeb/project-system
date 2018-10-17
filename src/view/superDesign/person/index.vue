@@ -22,10 +22,9 @@
           type="date"
           placeholder="入职时间">
         </el-date-picker>
-        <el-button type="success" style="margin-left:20px" @click="showState = true">
-          导入表格
+        <el-button type="success" style="margin:0 20px" @click="showState = true">
+          添加组员
         </el-button>
-        <el-button type="primary" style="margin-right:20px">导出表格</el-button>
       </div>
     </div>
     <div class="project-table">
@@ -111,7 +110,7 @@
       },
       detailGo (item) {
         this.projectId(item)
-        this.$router.push({path: '/home/perPersonDetail'})
+        this.$router.push({path: '/home/superDesPersonDetail'})
       },
       del (item) {},
       nameSearch () {},
@@ -176,6 +175,14 @@
         /*border: 1px solid;*/
         .searchProject {
           position: relative;
+          .searchInput {
+            width: 200px;
+            height: 38px;
+            vertical-align: middle;
+            padding-left: 10px;
+            border: 1px solid #cccccc;
+            border-radius: 3px;
+          }
           i {
             vertical-align: middle;
             position: absolute;

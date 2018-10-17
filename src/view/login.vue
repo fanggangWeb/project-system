@@ -23,13 +23,19 @@
       </div>
       <div class="submit-button" @click="loginClick">登 录</div>
     </div>
+    <el-dialog title="上传人员列表" :visible.sync="showState" width="40%" center>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="showState = false">取 消</el-button>
+        <el-button type="primary" @click="showState = false">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
 <script>
   import common from  '@/utils/common'
   import { login }from '../api/request'
-  import { proManager, orWorker, proSupervisor, busSupervisor, business, personnel } from '../router/index'
+  import { proManager, orWorker, proSupervisor, busSupervisor, business, personnel, superDesign } from '../router/index'
   import { mapMutations } from 'vuex'
   export default {
     name: "login",
@@ -38,6 +44,7 @@
         isRememberPassword: false,
         accountNumber: '',
         password: '',
+        showState: false
       }
     },
     mounted() {
@@ -109,6 +116,11 @@
           const router = JSON.stringify(personnel)
           this.routers(router)
           this.$router.push('/home/perPerson')
+        } else if ( this.accountNumber == 7) {
+          // 设计主管
+          const router = JSON.stringify(superDesign)
+          this.routers(router)
+          this.$router.push('/home/assign')
         }
         // login(data).then(res => {
         //   console.log(res)

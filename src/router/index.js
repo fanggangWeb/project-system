@@ -351,13 +351,20 @@ export const mainRoute = {
   }, {
     // 设计主管的路由
     path: 'assign',
-    name: '分配'
+    name: '分配',
+    component: _import('superDesign/assign/index')
   }, {
     path: 'superDesPerson',
-    name: '人员'
+    name: '人员',
+    component: _import('superDesign/person/index')
+  }, {
+    path: 'superDesPersonDetail',
+    name: '人员详情',
+    component: _import('superDesign/person/detail')
   }, {
     path: 'superDesDynamic',
-    name: '动态'
+    name: '动态',
+    component: _import('superDesign/dynamic/index')
   }]
 }
 stateRoute.push(mainRoute)
