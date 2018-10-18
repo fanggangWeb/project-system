@@ -32,7 +32,7 @@
     },
     mounted() {
       vm = this
-      console.log(this.$route)
+      // console.log(this.$route)
     },
     methods: {
       ...mapMutations([]),

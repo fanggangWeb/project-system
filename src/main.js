@@ -9,7 +9,7 @@ import router from './router'
 import ElementUi from 'element-ui'
 import store from './store'
 import * as msg from './utils/message'
-// import './permission'
+import './permission'
 import './style/reset.styl'
 Vue.config.productionTip = false
 // Vue.prototype.formCreate = formCreate

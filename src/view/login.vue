@@ -23,10 +23,22 @@
       </div>
       <div class="submit-button" @click="loginClick">登 录</div>
     </div>
-    <el-dialog title="上传人员列表" :visible.sync="showState" width="40%" center>
+    <el-dialog :visible.sync="showState" width="35%" :close-on-click-modal="false" center>
+      <el-row style="font-size:16px;line-height:25px;margin-top:20px;color:rgb(144, 147, 153)">
+        <el-col :offset="4" :span="20">检测到当前登录账号有多种角色权限，请进行选择登录</el-col>
+      </el-row>
+      <el-row style="font-size:16px;line-height:25px;margin-top:20px;color:rgb(144, 147, 153)">
+        <el-col :offset="4">
+          <span>请选择登录角色:</span>
+          <el-select style="width:160px;margin-left:10px;" v-model="roleValue"  clearable placeholder="选择角色">
+            <el-option v-for="item in roleList" :key="item.securityRoles" :label="item.name" :value="item.securityRoles">
+          </el-option>
+        </el-select>
+        </el-col>
+      </el-row>
       <span slot="footer" class="dialog-footer">
         <el-button @click="showState = false">取 消</el-button>
-        <el-button type="primary" @click="showState = false">确 定</el-button>
+        <el-button type="primary" @click="confirm">确 定</el-button>
       </span>
     </el-dialog>
   </div>
@@ -34,7 +46,8 @@
 
 <script>
   import common from  '@/utils/common'
-  import { login }from '../api/request'
+  const SUCCESS_OK = '200'
+  import { login, userInfo }from '../api/request'
   import { proManager, orWorker, proSupervisor, busSupervisor, business, personnel, superDesign } from '../router/index'
   import { mapMutations } from 'vuex'
   export default {
@@ -44,7 +57,9 @@
         isRememberPassword: false,
         accountNumber: '',
         password: '',
-        showState: false
+        showState: false,
+        roleValue: '',
+        roleList: []
       }
     },
     mounted() {
@@ -55,7 +70,20 @@
       }
     },
     methods: {
-      ...mapMutations(['SET_NAME', 'SET_AVATA', 'routers']),
+      ...mapMutations(['name', 'position', 'id', 'role','routers']),
+      confirm () {
+        if (this.roleValue) {
+          for (let i = 0; i<this.roleList.length; i++) {
+            if (this.roleList[i].securityRoles == this.roleValue) {
+              this.role(this.roleValue)
+              this.routers(JSON.stringify(this.roleList[i].userMenus))
+              this.$router.push(`/home/${this.roleList[i].userMenus[0].path}`)
+            }
+          }
+        } else {
+          this.MessageError('请选择登录角色！')
+        }
+      },
       loginClick () {
         let lable;
         let error;
@@ -86,47 +114,72 @@
           username: this.accountNumber,
           password: this.password
         }
-        if ( this.accountNumber == 1 ) {
-          // 项目经理
-          const router = JSON.stringify(proManager)
-          this.routers(router)
-          this.$router.push('/home/task')
-        } else if ( this.accountNumber == 2 ) {
-          // 普通开发人员
-          const router = JSON.stringify(orWorker)
-          this.routers(router)
-          this.$router.push('/home/orTask')
-        }else if ( this.accountNumber == 3 ) {
-          // 项目主管
-          const router = JSON.stringify(proSupervisor)
-          this.routers(router)
-          this.$router.push('/home/superTask')
-        } else if ( this.accountNumber == 4) {
-          // 商务主管
-          const router = JSON.stringify(busSupervisor)
-          this.routers(router)
-          this.$router.push('/home/busSuperfeedback')
-        } else if ( this.accountNumber == 5) {
-          // 普通业务员
-          const router = JSON.stringify(business)
-          this.routers(router)
-          this.$router.push('/home/follow')
-        } else if ( this.accountNumber == 6) {
-          // 人事
-          const router = JSON.stringify(personnel)
-          this.routers(router)
-          this.$router.push('/home/perPerson')
-        } else if ( this.accountNumber == 7) {
-          // 设计主管
-          const router = JSON.stringify(superDesign)
-          this.routers(router)
-          this.$router.push('/home/assign')
-        }
-        // login(data).then(res => {
-        //   console.log(res)
-        //   if (res.status == 200) {
-        //   }
-        // })
+        // if ( this.accountNumber == 1 ) {
+        //   // 项目经理
+        //   const router = JSON.stringify(proManager)
+        //   this.routers(router)
+        //   this.$router.push('/home/task')
+        // } else if ( this.accountNumber == 2 ) {
+        //   // 普通开发人员
+        //   const router = JSON.stringify(orWorker)
+        //   this.routers(router)
+        //   this.$router.push('/home/orTask')
+        // }else if ( this.accountNumber == 3 ) {
+        //   // 项目主管
+        //   const router = JSON.stringify(proSupervisor)
+        //   this.routers(router)
+        //   this.$router.push('/home/superTask')
+        // } else if ( this.accountNumber == 4) {
+        //   // 商务主管
+        //   const router = JSON.stringify(busSupervisor)
+        //   this.routers(router)
+        //   this.$router.push('/home/busSuperfeedback')
+        // } else if ( this.accountNumber == 5) {
+        //   // 普通业务员
+        //   const router = JSON.stringify(business)
+        //   this.routers(router)
+        //   this.$router.push('/home/follow')
+        // } else if ( this.accountNumber == 6) {
+        //   // 人事
+        //   const router = JSON.stringify(personnel)
+        //   this.routers(router)
+        //   this.$router.push('/home/perPerson')
+        // } else if ( this.accountNumber == 7) {
+        //   // 设计主管
+        //   const router = JSON.stringify(superDesign)
+        //   this.routers(router)
+        //   this.$router.push('/home/assign')
+        // }
+        login(data).then(res => {
+          res = res.data
+          // console.log(res)
+          const length = res.data.authorities.length
+          const authority = res.data.authorities[0].authority
+          if (res.state == SUCCESS_OK) {
+            userInfo().then(res => {
+              res = res.data
+              data = res.data
+              console.log(res)
+              if (res.state == SUCCESS_OK) {
+                this.name(data.name)
+                this.position(data.position)
+                this.id(data.id)
+                if (length == 1) { // 只有一种权限的拿到姓名路由后直接跳页面
+                  this.role(authority)
+                  this.routers(JSON.stringify(data.userRoles[0].userMenus))
+                  this.$router.push(`/home/${data.userRoles[0].userMenus[0].path}`)
+                } else { // 有两种权限或者多种权限的
+                this.roleList = data.userRoles
+                this.showState = true
+                }
+              } else {
+                this.MessageError(res.message)
+              }
+            })
+          } else {
+            this.MessageError(1111)
+          }
+        })
       },
       setValue (name, value, day) {
         var date = new Date();

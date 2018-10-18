@@ -1,4 +1,6 @@
 import axios from 'axios'
+// import Vue from 'vue'
+// const vm = new Vue()
 // import store from '@/store'
 import {
   Message,
@@ -53,24 +55,14 @@ instance.interceptors.response.use(res => {
     endLoading()
   }
   return res
-  // else {
-  //   MessageBox.confirm('你已被登出，可以取消继续留在该页面，或者重新登录', '确定登出', {
-  //     confirmButtonText: '重新登录',
-  //     cancelButtonText: '取消',
-  //     type: 'warning'
-  //   }).then(() => {
-  //     store.dispatch('FedLogout').then(() => {
-  //       location.reload() // 为了重新实例化vue-router对象 避免bug
-  //     })
-  //   })
-  //   return Promise.reject(new Error('后台返回格式不对'))
-  // }
 }, error => {
   // MessageError('访问出错')
   if (loading) {
     endLoading()
   }
-  switch (error) {
+  // alert(JSON.stringify(error))
+  const code = error.response.data.state
+  switch (code) {
     case 400:
       MessageError('错误请求')
       break
@@ -78,7 +70,7 @@ instance.interceptors.response.use(res => {
       MessageError('未授权，请重新登录')
       break
     case 403:
-      MessageError('拒绝访问')
+      MessageError(error.response.data.message)
       break
     case 404:
       MessageError('请求错误,未找到该资源')

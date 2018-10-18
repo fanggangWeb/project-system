@@ -5,7 +5,7 @@
     <div class="el-dropdown">
       <span @click="personCenter" class="el-dropdown-link">
         <!-- <img class="avatar" :src="getAvatar"/> -->
-        {{getName}}
+        {{getname}}，{{getposition}}
       </span>
       <img class="signout" src="../../assets/sign_out.png" @click="logout"/>
     </div>
@@ -17,8 +17,8 @@ import { mapGetters } from 'vuex'
 export default {
   computed: {
     ...mapGetters([
-      'getName',
-      'getAvatar'
+      'getname',
+      'getposition'
     ])
   },
   methods: {

@@ -120,6 +120,13 @@
         }
       }
     },
+    watch: {
+      Visible: function (val, oldval) {
+        if (val == false) {
+          this.$refs['form'].resetFields()
+        }
+      }
+    },
     methods: {
       changeTab(item, index) {
         this.current = index

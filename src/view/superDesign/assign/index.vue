@@ -200,9 +200,6 @@
     .project-paging {
       text-align: center;
       padding: 10px 16px 0 16px;
-    } // .addProject:hover{
-    //   opacity: .85;
-    //   transition: .2s;
-    // }
+    }
   }
 </style>
