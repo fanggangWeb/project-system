@@ -84,7 +84,7 @@
       </span>
     </el-dialog>
     <div class="project-paging">
-      <el-pagination background layout="prev, pager, next" 
+      <el-pagination background layout="prev, pager, next"
       :page-size="size" @current-change="handleCurrentChange"
       :current-page.sync="page"
       :total="totalElements">
@@ -95,6 +95,7 @@
 
 <script>
   let vm
+  import { getDepartmentUsersList } from '@/api/center_request'
   import { mapGetters, mapMutations } from 'vuex'
   export default {
     data() {
@@ -134,9 +135,18 @@
         }
       }
     },
-    mounted() {},
+    mounted() {
+      this.getDepartmentUsersList()
+    },
     methods: {
       ...mapMutations(['projectId']),
+      // 获取本部门人员列表
+      getDepartmentUsersList () {
+        getDepartmentUsersList({ page: 1, size: 100 }).then(res => {
+          res = res.data
+          // console.log(res)
+        })
+      },
       handleSuccess (response, file, fileList) {
         console.log(response)
       },
@@ -213,7 +223,7 @@
         .selectChoose {
           width: 130px;
           margin-left: 30px;
-          margin-right: 20px; 
+          margin-right: 20px;
         }
       }
       .not_current {
