@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <div class="header">
-      首页 > 人员
+      首页 > 分配
       <div class="searchContent">
         <div class="searchProject">
           <el-input placeholder="搜索项目名称" v-model="projectName" clearable>

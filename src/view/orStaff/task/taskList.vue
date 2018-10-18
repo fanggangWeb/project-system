@@ -10,9 +10,7 @@
     </div> -->
     <div class="project-table">
       <el-table :header-cell-style="{background:'#FAFAFA',textAlign: 'center'}" @selection-change="handleSelectionChange" :data="taskList" :stripe="true" style="width: 100%">
-        <el-table-column type="selection" align="center" width="50">
-        </el-table-column>
-        <el-table-column prop="name" type="index" label="序号" style="width: 20%">
+        <el-table-column prop="name" type="index" align="center" label="序号" width="60">
         </el-table-column>
         <el-table-column prop="job" label="所属项目" style="width: 20%">
         </el-table-column>
@@ -27,13 +25,15 @@
         <el-table-column align="center" label="操作">
           <template slot-scope="scope">
             <el-button type="primary" size="small" @click="detailGo(scope.row)">详情</el-button>
-            <el-button type="success" size="small" @click="delPerson(scope.row)">领取</el-button>
+            <!-- <el-button type="success" size="small" @click="receive(scope.row)">领取</el-button> -->
           </template>
         </el-table-column>
       </el-table>
     </div>
     <el-dialog title="详情" :visible.sync="showState" width="60%" :close-on-click-modal="false" center>
       <el-table :header-cell-style="{background:'#FAFAFA',textAlign: 'center'}" @selection-change="handleSelectionChange" :data="moduleList" :stripe="true" style="width: 100%">
+        <el-table-column type="selection" align="center" width="50">
+        </el-table-column>
         <el-table-column prop="name" type="index" label="序号" style="width: 20%">
         </el-table-column>
         <el-table-column prop="job" label="功能模块" style="width: 20%">
@@ -42,14 +42,19 @@
         </el-table-column>
         <el-table-column prop="zhuanzheng" label="描述" style="width: 20%">
         </el-table-column>
+        <el-table-column align="center" label="操作">
+          <template slot-scope="scope">
+            <el-button type="success" size="small" @click="receiveOne(scope.row)">领取</el-button>
+          </template>
+        </el-table-column>
       </el-table>
       <span slot="footer" class="dialog-footer">
-        <el-button type="success" @click="showState = false">领 取</el-button>
+        <el-button type="success" @click="receiveAll">领 取</el-button>
           <el-button @click="showState = false">取 消</el-button>
         </span>
     </el-dialog>
     <div class="project-paging">
-      <el-button type="success" size="small">领取</el-button>
+      <!-- <el-button type="success" size="small">领取</el-button> -->
       <el-pagination background layout="prev, pager, next" 
       :page-size="size" @current-change="handleCurrentChange"
       :current-page.sync="page"
@@ -77,7 +82,8 @@
         downUrl: '',
         page: 1,
         size: 10,
-        totalElements: 10
+        totalElements: 10,
+        chooseModule: []
       }
     },
     computed: {
@@ -100,13 +106,21 @@
         }
       },
       handleSelectionChange(val) {
-        console.log(val)
+        // console.log(val)
+        this.chooseModule = val
       },
       detailGo (item) {
         this.showState = true
         // this.$router.push('/home/staffDetail')
       },
-      delPerson (item) {},
+      receiveOne () {},
+      receiveAll (item) {
+        if (this.chooseModule.length > 0) {
+
+        } else {
+          this.MessageError('请选取要领取的功能模块')
+        }
+      },
       jump(url, id) {
         vm.$router.push(url)
         vm.currentSelect = id

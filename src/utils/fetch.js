@@ -1,28 +1,23 @@
 import axios from 'axios'
-// import Vue from 'vue'
-// const vm = new Vue()
-// import store from '@/store'
-import {
-  Message,
-  Loading
-} from 'element-ui'
+import router from '../router/index'
+import store from '@/store'
+import { Message, Loading } from 'element-ui'
 // 数据失败的提示
-export function MessageError(message = '服务器出错，请联系后台管理人员') {
+export function MessageError (message) {
   Message({
     type: 'error',
     showClose: true,
     message
   })
 }
+
 const instance = axios.create({
   baseURL: process.env.BASE_API,
-  // 设置请求可以携带cookie
-  withCredentials: true,
+  withCredentials: true, // 设置请求可以携带cookie
   timeout: 10000
 })
 
 let loading
-
 function startLoading() {
   loading = Loading.service({
     lock: true,
@@ -30,47 +25,41 @@ function startLoading() {
     background: 'rgba(0, 0, 0, 0.7)'
   })
 }
-
 function endLoading() {
   loading.close()
 }
 
-// 添加一个请求拦截器
-instance.interceptors.request.use(config => {
-  if (config.load) {
-    startLoading()
-  }
-  // 后期根据token做处理
-  // if (store.getters.token) {
-  //   config.headers['token'] = store.getters.token
-  // }
+instance.interceptors.request.use(config => { // 添加一个请求拦截器
+  if (config.load) { startLoading() }
+  //   config.headers['token'] = store.getters.token // 如果要附加请求头
   return config
 }, error => {
   console.log(error)
   Promise.reject(error)
 })
-// 添加一个返回拦截器
-instance.interceptors.response.use(res => {
-  if (loading) {
-    endLoading()
-  }
+
+instance.interceptors.response.use(res => { // 添加一个返回拦截器
+  if (loading) { endLoading() }
   return res
 }, error => {
-  // MessageError('访问出错')
-  if (loading) {
-    endLoading()
-  }
+  if (loading) { endLoading() }
   // alert(JSON.stringify(error))
   const code = error.response.data.state
+  const message = error.response.data.message
   switch (code) {
     case 400:
       MessageError('错误请求')
       break
     case 401:
       MessageError('未授权，请重新登录')
+      store.dispatch('FedLogout')
+      setTimeout(() => {
+        router.push('/')
+      }, 1500)
       break
     case 403:
-      MessageError(error.response.data.message)
+      // MessageError('拒绝访问')
+      MessageError(message)
       break
     case 404:
       MessageError('请求错误,未找到该资源')

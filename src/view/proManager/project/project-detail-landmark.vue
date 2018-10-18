@@ -67,7 +67,8 @@
       :total="totalElements">
       </el-pagination>
     </div>
-    <el-dialog title="上传计划列表" :visible.sync="showState" width="35%" center>
+    <el-dialog title="上传计划列表" :close-on-click-modal="false
+    " :visible.sync="showState" width="35%" center>
       <el-row style="margin-top:20px">
         <el-col :offset="4" :span="8">
           <el-button type="primary"><a style="color:white" :href="downUrl">下载excel模板</a></el-button>

@@ -1,10 +1,7 @@
 import router from './router'
 import store from './store'
-// import { Message } from 'element-ui'
-// import { getCookie } from './utils/cookie'
 const whiteList = ['/'] // 定义登录白名单
 router.beforeEach((to, from, next) => {
-  // console.log(store.getters.getrouters)
   if (store.getters.getrouters) {
     next()
   } else {

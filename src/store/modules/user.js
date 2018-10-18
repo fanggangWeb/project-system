@@ -5,6 +5,9 @@ function set (name, val) {
 function get (name) {
   return sessionStorage.getItem(name)
 }
+function remove (name) {
+  return sessionStorage.removeItem(name)
+}
 const user = {
   state: {
     token: get('token'),
@@ -46,10 +49,16 @@ const user = {
     // 用户注销
     FedLogout({commit}) {
       return new Promise((resolve) => {
-        // commit('SET_TOKEN', '') // 把token设置为空
-        // removeCookie('token')
-        // removeCookie('id')
-        // commit('SET_ID', '')
+        commit('token', '')
+        commit('name', '')
+        commit('position', '')
+        commit('role', '')
+        commit('id', '')
+        remove('token')
+        remove('name')
+        remove('position')
+        remove('role')
+        remove('id')
         resolve()
       })
     }

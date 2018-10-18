@@ -169,8 +169,8 @@
                   this.routers(JSON.stringify(data.userRoles[0].userMenus))
                   this.$router.push(`/home/${data.userRoles[0].userMenus[0].path}`)
                 } else { // 有两种权限或者多种权限的
-                this.roleList = data.userRoles
-                this.showState = true
+                  this.roleList = data.userRoles
+                  this.showState = true
                 }
               } else {
                 this.MessageError(res.message)
@@ -200,7 +200,7 @@
       },
       keyDown(ev) {
         if (ev.keyCode == 13) {
-          this.loginClick();
+          this.loginClick()
         }
       }
     }
