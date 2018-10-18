@@ -114,42 +114,6 @@
           username: this.accountNumber,
           password: this.password
         }
-        // if ( this.accountNumber == 1 ) {
-        //   // 项目经理
-        //   const router = JSON.stringify(proManager)
-        //   this.routers(router)
-        //   this.$router.push('/home/task')
-        // } else if ( this.accountNumber == 2 ) {
-        //   // 普通开发人员
-        //   const router = JSON.stringify(orWorker)
-        //   this.routers(router)
-        //   this.$router.push('/home/orTask')
-        // }else if ( this.accountNumber == 3 ) {
-        //   // 项目主管
-        //   const router = JSON.stringify(proSupervisor)
-        //   this.routers(router)
-        //   this.$router.push('/home/superTask')
-        // } else if ( this.accountNumber == 4) {
-        //   // 商务主管
-        //   const router = JSON.stringify(busSupervisor)
-        //   this.routers(router)
-        //   this.$router.push('/home/busSuperfeedback')
-        // } else if ( this.accountNumber == 5) {
-        //   // 普通业务员
-        //   const router = JSON.stringify(business)
-        //   this.routers(router)
-        //   this.$router.push('/home/follow')
-        // } else if ( this.accountNumber == 6) {
-        //   // 人事
-        //   const router = JSON.stringify(personnel)
-        //   this.routers(router)
-        //   this.$router.push('/home/perPerson')
-        // } else if ( this.accountNumber == 7) {
-        //   // 设计主管
-        //   const router = JSON.stringify(superDesign)
-        //   this.routers(router)
-        //   this.$router.push('/home/assign')
-        // }
         login(data).then(res => {
           res = res.data
           // console.log(res)
