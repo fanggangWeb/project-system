@@ -152,6 +152,7 @@
               res = res.data
               if (res.state === 200) {
                 this.MessageSuccess(res.message)
+                this.dialogShowState = false
               } else {
                 this.MessageError(res.message)
               }
