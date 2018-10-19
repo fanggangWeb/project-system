@@ -46,6 +46,9 @@ instance.interceptors.response.use(res => { // 添加一个返回拦截器
   // alert(JSON.stringify(error))
   const code = error.response.data.state
   const message = error.response.data.message
+  if (!code) {
+    MessageError('连接错误')
+  }
   switch (code) {
     case 400:
       MessageError('错误请求')
@@ -91,7 +94,6 @@ instance.interceptors.response.use(res => { // 添加一个返回拦截器
     default:
       MessageError(`连接错误`)
   }
-  MessageError('连接错误')
   Promise.reject(error)
 })
 export default instance

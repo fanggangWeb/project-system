@@ -24,6 +24,9 @@
           @change="timeQuery"
           placeholder="入职时间">
         </el-date-picker>
+        <el-button v-if="dingShow" type="info" plain style="margin-left:20px" @click="dingTalk">
+          同步钉钉
+        </el-button>
         <el-button type="success" style="margin-left:20px" @click="showState = true">
           导入表格
         </el-button>
@@ -66,10 +69,10 @@
     </div>
     <el-dialog title="上传人员列表" :close-on-click-modal="false" :visible.sync="showState" width="35%" center>
       <el-row style="margin-top:20px">
-        <el-col :offset="4" :span="8">
+        <el-col style="text-align:center" :offset="4" :span="8">
           <el-button type="primary"><a style="color:white" :href="downUrl">下载excel模板</a></el-button>
         </el-col>
-        <el-col :span="8">
+        <el-col style="text-align:center" :span="8">
           <el-upload :action="uploadUrl" :file-list="fileList" :data="dataParams()" :on-success="isDemand" :show-file-list="false">
             <el-button style="background-color:#45B78D;border-color:none;color:white">上传excel表格
             </el-button>
@@ -88,7 +91,7 @@
   let vm
   const SUCCESS_OK = '200'
   import { mapGetters, mapMutations } from 'vuex'
-  import { groupMemberList, allPosition, allDepartment } from '@/api/request'
+  import { groupMemberList, allPosition, allDepartment, delStaff, getAccessToken, importUsers } from '@/api/request'
   export default {
     data() {
       return {
@@ -100,6 +103,7 @@
         departmentId: '',
         page: 1,
         size: 10,
+        dingShow: true,
         searchTime: '',
         staffList: [],
         status: {},
@@ -128,6 +132,28 @@
       handleError (err, file, fileList){
         this.MessageError('上传附件失败')
       },
+      // 同步钉钉数据
+      dingTalk () {
+        getAccessToken().then(res => {
+          res = res.data
+          if (res.state = SUCCESS_OK) {
+            const token = res.data
+            this.$alert('同步钉钉数据需要一分钟左右的时间，请勿重复点击同步按钮！', '提示', {
+              confirmButtonText: '确定',
+              callback: action => {
+              }
+            })
+            this.dingShow = false
+            setTimeout(() => {
+              this.dingShow = true
+            }, 60000)
+            importUsers({accessToken: token}).then(res => {
+            })
+          } else {
+            this.MessageError('同步失败')
+          }
+        })
+      },
       // 获取所有员工的列表
       _groupMemberList () {
         const data = {
@@ -140,7 +166,7 @@
         }
         groupMemberList(data).then(res => {
           res = res.data
-          console.log(res)
+          // console.log(res)
           if (res.state == SUCCESS_OK) {
             this.staffList = res.data.rows
             this.totalElements = res.data.total
@@ -182,7 +208,25 @@
         // this.staffId(item.id)
         this.$router.push({path: '/home/perPersonDetail'})
       },
-      del (item) {},
+      del (item) {
+        this.$confirm('此操作将永久删除该人员, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning',
+          center: true
+        }).then(() => {
+          delStaff({id:item.id}).then(res => {
+            res = res.data
+            if (res.state == SUCCESS_OK) {
+              this.MessageSuccess('操作成功')
+              this._groupMemberList()
+            } else {
+              this.MessageError('删除失败')
+            }
+          })
+        }).catch(() => {
+        })
+      },
       timeQuery () {
         // console.log(this.searchTime)
         this.page = 1

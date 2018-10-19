@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <div class="header">
-      首页 > 任务
+      首页 > 反馈
       <div class="searchContent">
         <div class="searchProject">
           <el-input @change="nameSearch" placeholder="项目名称" v-model="projectName" clearable>
@@ -10,15 +10,10 @@
         </div>
         <div class="selectChoose">
           <el-select v-model="projectStatus" clearable placeholder="跟进人员">
-            <el-option v-for="item in followList" :key="item.id" :label="item.name" :value="item.userId">
+            <el-option v-for="item in followList" :key="item.id" :label="item.name" :value="item.id">
             </el-option>
           </el-select>
         </div>
-        <!-- <el-date-picker
-          v-model="searchTime"
-          type="date"
-          placeholder="项目开始日期">
-        </el-date-picker> -->
         <el-button class="addProject" type="success" @click="showState = true">指派任务</el-button>
       </div>
     </div>
@@ -55,8 +50,8 @@
           <el-input v-model="form.customer" placeholder="请输入客户名称"></el-input>
         </el-form-item>
         <el-form-item label="跟进人员" prop="follow">
-          <el-select v-model="form.follow" clearable placeholder="选择跟进人员">
-            <el-option v-for="item in followList" :key="item.id" :label="item.name" :value="item.userId">
+          <el-select v-model="form.follow" clearable multiple placeholder="选择跟进人员">
+            <el-option v-for="item in followList" :key="item.id" :label="item.name" :value="item.id">
             </el-option>
           </el-select>
         </el-form-item>
@@ -95,9 +90,8 @@
 
 <script>
   let vm
-  import { getDepartmentUsersList, saleReleaseTask } from '@/api/center_request'
+  import { getDepartmentUsersList, saleReleaseTask } from '@/api/request'
   import { mapGetters, mapMutations } from 'vuex'
-
   // 电话号码验证
   let isvalidPhone = (str) => {
     const reg = /^1[3|4|5|7|8][0-9]\d{8}$/
@@ -112,7 +106,6 @@
       callback()
     }
   }
-
   export default {
     data() {
       return {
@@ -120,7 +113,6 @@
         projectStatus: '',
         page: 1,
         size: 10,
-        searchTime: '',
         projectsList: [1,2],
         status: {},
         totalElements: 10,
@@ -129,16 +121,15 @@
         form: {
           name: '',
           customer: '',
-          follow: '',
+          follow: [],
           telephone: '',
           desc: '',
-          // fileList: []
         },
         rules: {
           name:[{required: true, message: '请输入项目名称', trigger: 'blur'}],
           customer:[{required: true, message: '请输入客户名称', trigger: 'blur'}],
           follow:[{required: true, message: '请选择跟进人员', trigger: 'change'}],
-          telephone:[{required: true, trigger: 'blur', validator: validPhone}],
+          telephone:[{required: true, message:'请输入联系方式', trigger: 'blur'}],
           desc:[{required: true, message: '请输入项目简介', trigger: 'blur'}]
         }
       }
@@ -154,7 +145,7 @@
       this.getDepartmentUsersList()
     },
     methods: {
-      ...mapMutations(['projectId']),
+      ...mapMutations([]),
       // 获取本部门人员列表
       getDepartmentUsersList () {
         getDepartmentUsersList({ page: 1, size: 100 }).then(res => {
@@ -183,14 +174,23 @@
       submit () {
         this.$refs['form'].validate((valid) => {
           if (valid) {
-            saleReleaseTask({ saleTask: this.form }).then(res => {
+            const data = {
+              name: this.form.name,
+              customer: {
+                customerName: this.form.customer,
+                customerMobile: this.form.telephone
+              },
+              salesPersons: this.form.follow,
+              demandDesc: this.form.desc
+            }
+            saleReleaseTask(data).then(res => {
               res = res.data
               console.log(res)
               if (res.state === 200) {
                 this.MessageSuccess(res.message)
                 this.showState = false
               } else {
-                this.MessageError(this.message)
+                this.MessageError(res.message)
               }
             })
           } else {

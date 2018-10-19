@@ -19,7 +19,7 @@ export function modifyPassword (data) {
     load: true
   })
 }
-// 获取本部员工列表
+// 获取本部员工列表去除领导
 export function getDepartmentUsersList (data) {
   data = qs.stringify(data)
   return fetch({
@@ -30,7 +30,7 @@ export function getDepartmentUsersList (data) {
 }
 // 商务主管指派任务
 export function saleReleaseTask (data) {
-  data = qs.stringify(data)
+  // data = qs.stringify(data)
   return fetch({
     url: `${HTTP}/saleTask/insert`,
     method: 'post',

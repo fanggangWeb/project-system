@@ -22,24 +22,26 @@
           type="date"
           value-format="yyyy-MM-dd"
           @change="timeQuery"
-          placeholder="入职时间">
+          placeholder="考核时间">
         </el-date-picker>
-        <el-button type="primary" style="margin-right:20px">导出表格</el-button>
+        <el-button type="primary" @click="exportExecl" style="margin-right:20px">导出表格</el-button>
       </div>
     </div>
     <div class="project-table">
       <el-table :header-cell-style="{textAlign: 'center'}"  :data="staffList" :stripe="true" style="width: 100%">
         <el-table-column type="index" align="center" label="序号" width="60">
         </el-table-column>
-        <el-table-column prop="name" label="所属部门">
+        <el-table-column prop="userInfo.department.name" align="center" label="所属部门">
         </el-table-column>
-        <el-table-column prop="name" label="名称">
+        <el-table-column prop="userInfo.name" align="center" label="名称">
         </el-table-column>
-        <el-table-column prop="name" label="岗位">
+        <el-table-column prop="userInfo.position" align="center" label="岗位">
         </el-table-column>
-        <el-table-column prop="name" label="薪资">
+        <el-table-column prop="userInfo.salaryMonth" align="center" label="薪资">
         </el-table-column>
-        <el-table-column prop="name" label="绩效">
+        <el-table-column prop="examineTime" align="center" label="考核时间">
+        </el-table-column>
+        <el-table-column prop="performance" align="center" label="绩效">
         </el-table-column>
         <!-- <el-table-column align="center" label="操作">
           <template slot-scope="scope">
@@ -62,7 +64,7 @@
   let vm
   const SUCCESS_OK = '200'
   import { mapGetters, mapMutations } from 'vuex'
-  import { allPosition, allDepartment, performanceList } from '@/api/request'
+  import { allPosition, allDepartment, performanceList, exportPerformance } from '@/api/request'
   export default {
     data() {
       return {
@@ -88,6 +90,7 @@
     mounted() {
       this._allPosition()
       this._allDepartment()
+      this._performanceList()
     },
     methods: {
       ...mapMutations(['projectId']),
@@ -105,7 +108,7 @@
           size: this.size,
           position: this.position,
           departmentId: this.departmentId,
-          hiredDate: this.searchTime
+          examineTime: this.searchTime
         }
         performanceList(data).then(res => {
           res = res.data
@@ -147,61 +150,50 @@
           }
         })
       },
-      detailGo (item) {
-        this.projectId(item)
-        // this.$router.push({path: '/home/perPersonDetail'})
+      // 导出员工的绩效表格
+      exportExecl () {
+        const data = {
+          name: this.personName,
+          page: this.page,
+          size: this.size,
+          position: this.position,
+          departmentId: this.departmentId,
+          examineTime: this.searchTime
+        }
+        exportPerformance(data).then(res => {
+          let a = document.createElement('a')
+          let url = window.URL.createObjectURL(new Blob([res.data]))
+          a.href = url
+          a.download = 'staff.xls'
+          a.click()
+          a.remove()
+        })
       },
-      nameSearch () {},
       jump (data) {
         this.$router.push(data)
       },
       handleCurrentChange() {
-        console.log(this.page)
+        this._performanceList()
       },
-            timeQuery () {
+      timeQuery () {
         // console.log(this.searchTime)
         this.page = 1
         if (this.searchTime == null) {
           this.searchTime = ''
         }
+        this._performanceList()
       },
       nameSearch () {
         this.page = 1
+        this._performanceList()
       },
       departSearch () {
         this.page = 1
+        this._performanceList()
       },
       positionSearch () {
         this.page = 1
-      },
-      // 上传计划表格的成功回调函数
-      isDemand(response, file, fileList) {
-        if (response.code == 0) {
-          this.MessageSuccess(response.msg)
-          vm.planUploadState(1)
-        } else {
-          this.MessageError(response.msg)
-          vm.planUploadState(0)
-        }
-      },
-      // 获取下载模板
-      downTem() {
-      },
-      dataParams() {
-        return {
-          projectsId: this.getprojectId
-        }
-      },
-      // 提交表单
-      submit () {
-        this.$refs['form'].validate((valid) => {
-          if (valid) {
-            alert('submit!')
-          } else {
-            console.log('error submit!!');
-            return false
-          }
-        })
+        this._performanceList()
       }
     }
   }
