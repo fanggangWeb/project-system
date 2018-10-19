@@ -28,3 +28,12 @@ export function getDepartmentUsersList (data) {
     data
   })
 }
+// 商务主管指派任务
+export function saleReleaseTask (data) {
+  data = qs.stringify(data)
+  return fetch({
+    url: `${HTTP}/saleTask/insert`,
+    method: 'post',
+    data
+  })
+}

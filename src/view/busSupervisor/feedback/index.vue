@@ -4,13 +4,13 @@
       首页 > 任务
       <div class="searchContent">
         <div class="searchProject">
-          <el-input placeholder="项目名称" v-model="projectName" clearable>
+          <el-input @change="nameSearch" placeholder="项目名称" v-model="projectName" clearable>
           </el-input>
           <a href="" @click.prevent="nameSearch"><i class="el-icon-search"></i></a>
         </div>
         <div class="selectChoose">
           <el-select v-model="projectStatus" clearable placeholder="跟进人员">
-            <el-option v-for="item in followList" :key="item.value" :label="item.label" :value="item.value">
+            <el-option v-for="item in followList" :key="item.id" :label="item.name" :value="item.userId">
             </el-option>
           </el-select>
         </div>
@@ -52,11 +52,11 @@
           <el-input v-model="form.name" placeholder="请输入项目名称"></el-input>
         </el-form-item>
         <el-form-item label="客户名称" prop="customer">
-          <el-input v-model="form.customer" placeholder="请输入项目名称"></el-input>
+          <el-input v-model="form.customer" placeholder="请输入客户名称"></el-input>
         </el-form-item>
         <el-form-item label="跟进人员" prop="follow">
           <el-select v-model="form.follow" clearable placeholder="选择跟进人员">
-            <el-option v-for="item in followList" :key="item.value" :label="item.label" :value="item.value">
+            <el-option v-for="item in followList" :key="item.id" :label="item.name" :value="item.userId">
             </el-option>
           </el-select>
         </el-form-item>
@@ -95,8 +95,24 @@
 
 <script>
   let vm
-  import { getDepartmentUsersList } from '@/api/center_request'
+  import { getDepartmentUsersList, saleReleaseTask } from '@/api/center_request'
   import { mapGetters, mapMutations } from 'vuex'
+
+  // 电话号码验证
+  let isvalidPhone = (str) => {
+    const reg = /^1[3|4|5|7|8][0-9]\d{8}$/
+    return reg.test(str)
+  }
+  let validPhone = (rule, value, callback) => {
+    if (!value){
+      callback(new Error('请输入联系电话'))
+    }else if (!isvalidPhone(value)){
+      callback(new Error('请输入正确的11位手机号码'))
+    }else {
+      callback()
+    }
+  }
+
   export default {
     data() {
       return {
@@ -112,18 +128,17 @@
         showState: false,
         form: {
           name: '',
-          follow: '',
           customer: '',
+          follow: '',
           telephone: '',
           desc: '',
           // fileList: []
         },
         rules: {
           name:[{required: true, message: '请输入项目名称', trigger: 'blur'}],
-          endTime:[{required: true, message: '请选择项目结束时间', trigger: 'blur'}],
-          follow:[{required: true, message: '请选择跟进人员', trigger: 'blur'}],
           customer:[{required: true, message: '请输入客户名称', trigger: 'blur'}],
-          telephone:[{required: true, message: '请输入联系电话', trigger: 'blur'}],
+          follow:[{required: true, message: '请选择跟进人员', trigger: 'change'}],
+          telephone:[{required: true, trigger: 'blur', validator: validPhone}],
           desc:[{required: true, message: '请输入项目简介', trigger: 'blur'}]
         }
       }
@@ -144,7 +159,7 @@
       getDepartmentUsersList () {
         getDepartmentUsersList({ page: 1, size: 100 }).then(res => {
           res = res.data
-          // console.log(res)
+          this.followList = res.data.rows
         })
       },
       handleSuccess (response, file, fileList) {
@@ -168,7 +183,16 @@
       submit () {
         this.$refs['form'].validate((valid) => {
           if (valid) {
-            alert('submit!')
+            saleReleaseTask({ saleTask: this.form }).then(res => {
+              res = res.data
+              console.log(res)
+              if (res.state === 200) {
+                this.MessageSuccess(res.message)
+                this.showState = false
+              } else {
+                this.MessageError(this.message)
+              }
+            })
           } else {
             console.log('error submit!!');
             return false
