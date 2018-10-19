@@ -16,11 +16,13 @@ const store = new Vuex.Store({
   },
   state: {
     routers: get('routers'),
-    projectId: get('projectId')
+    projectId: get('projectId'),
+    staffId: get('staffId')
   },
   getters: {
     getrouters: state => state.routers,
-    getprojectId: state => state.projectId
+    getprojectId: state => state.projectId,
+    getstaffId: state => state.staffId
   },
   mutations: {
     projectId (state, data) {
@@ -30,6 +32,10 @@ const store = new Vuex.Store({
     routers (state, data) {
       state.routers = data
       set('routers', data)
+    },
+    staffId (state, data) {
+      state.staffId = data
+      set('staffId', data)
     }
   }
 })

@@ -91,6 +91,7 @@ instance.interceptors.response.use(res => { // 添加一个返回拦截器
     default:
       MessageError(`连接错误`)
   }
+  MessageError('连接错误')
   Promise.reject(error)
 })
 export default instance

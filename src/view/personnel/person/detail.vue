@@ -2,7 +2,7 @@
   <div class="container">
     <div class="header">首页&nbsp;>&nbsp;人员&nbsp;>&nbsp;人员详情</div>
     <div class="nav">
-      <span class="span icon_user">姓名：柴方刚{{userInfo.name}}</span>
+      <span style="margin-left:35px" class="span icon_user">姓名：柴方刚{{userInfo.name}}</span>
       <span class="span icon_user">岗位：IOS工程师</span>
       <span class="span icon_user">转正情况：已转正</span>
       <!-- <span class="span icon_user">转正情况：{{userInfo.entryStatus == 'POSITIVE'? '已转正':'未转正'}}</span> -->
@@ -118,10 +118,10 @@
       // vm.getThisMonthTasks()
     },
     computed: {
-      ...mapGetters([])
+      // ...mapGetters(['getstaffId'])
     },
     methods: {
-      ...mapMutations(['entryStatus', 'name', 'position', 'level']),
+      ...mapMutations([]),
       // 获取人员信息(任务，考勤，基本信息)
       getPersonInfo() {
         let req = new Object();
