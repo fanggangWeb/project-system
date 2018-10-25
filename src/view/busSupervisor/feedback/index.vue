@@ -49,6 +49,9 @@
         <el-form-item label="客户名称" prop="customer">
           <el-input v-model="form.customer" placeholder="请输入客户名称"></el-input>
         </el-form-item>
+        <el-form-item label="客户公司" prop="corporationName">
+          <el-input v-model="form.corporationName" placeholder="请输入客户公司"></el-input>
+        </el-form-item>
         <el-form-item label="跟进人员" prop="follow">
           <el-select v-model="form.follow" clearable multiple placeholder="选择跟进人员">
             <el-option v-for="item in followList" :key="item.id" :label="item.name" :value="item.id">
@@ -124,13 +127,15 @@
           follow: [],
           telephone: '',
           desc: '',
+          corporationName: ''
         },
         rules: {
           name:[{required: true, message: '请输入项目名称', trigger: 'blur'}],
           customer:[{required: true, message: '请输入客户名称', trigger: 'blur'}],
           follow:[{required: true, message: '请选择跟进人员', trigger: 'change'}],
           telephone:[{required: true, message:'请输入联系方式', trigger: 'blur'}],
-          desc:[{required: true, message: '请输入项目简介', trigger: 'blur'}]
+          desc:[{required: true, message: '请输入项目简介', trigger: 'blur'}],
+          corporationName:[{required: true, message: '请输入客户公司', trigger: 'blur'}]
         }
       }
     },
@@ -178,7 +183,8 @@
               name: this.form.name,
               customer: {
                 customerName: this.form.customer,
-                customerMobile: this.form.telephone
+                customerMobile: this.form.telephone,
+                corporationName: this.form.corporationName
               },
               salesPersons: this.form.follow,
               demandDesc: this.form.desc

@@ -9,7 +9,10 @@ import store from './store'
 import * as msg from './utils/message'
 import './permission'
 import './style/reset.styl'
+import { uploadApi, HTTP } from './utils/config'
 Vue.config.productionTip = false
+Vue.prototype.uploadApi = uploadApi
+Vue.prototype.HTTP = HTTP
 Vue.use(ElementUi)
 // 自定义封装消息提示框
 Object.keys(msg).forEach(key => {

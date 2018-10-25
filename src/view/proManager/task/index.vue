@@ -25,19 +25,19 @@
           <!-- 计划列表 -->
           <div class="project-list">
             <div class="project-content" v-for="(item,index) in taskList" :key="index" @click="detailShow(item,index)" :class="{'current-display':index == current}">
-              <div class="project-name"><img src="../../../assets/project_img.png" />测试</div>
+              <div class="project-name"><img src="../../../assets/project_img.png" />{{item.managerTaskBaseInfo.name}}</div>
               <!-- <div class="project-state project-details">
                 <div></div>
                 测试数据
               </div> -->
               <!-- <div class="project-time project-details">{{item.estimatedEndTime}}到期</div>-->
-              <div class="project-time project-details">2018-9-29到期</div>          
+              <div class="project-time project-details">{{item.managerTaskBaseInfo.endTime}}<span>到期</span></div>          
               <!-- <div class="project-difficulty project-details">{{priority[item.priority]}}</div> -->
-              <div class="project-difficulty project-details">高级</div>
-              <img src="../../../assets/priority.png" class="priority"/>
+              <!-- <div class="project-difficulty project-details">高级</div> -->
+              <img v-if="item.managerTaskBaseInfo == 0" src="../../../assets/priority.png" class="priority"/>
             </div>
             <div>
-              <el-button plain type="primary btn-w" v-if="isMore">加载更多</el-button>
+              <el-button plain type="primary btn-w" @click="showMore" v-if="isMore">加载更多</el-button>
             </div>
           </div>
         </div>
@@ -47,49 +47,50 @@
         <div class="detail">
           <div class="detail-row">
             <span class="keyword">项目名称：</span>
-            <span class="value">蓝莓App</span>
+            <span class="value">{{managerTaskBaseInfo.name}}</span>
           </div>
           <div class="detail-row">
             <span class="keyword">项目时间：</span>
-            <span class="value">2018.01.02-2018.03.21</span>
+            <span class="value">{{managerTaskBaseInfo.startTime}} — {{managerTaskBaseInfo.endTime}}</span>
           </div>
           <div class="detail-row">
             <span class="keyword">项目经理：</span>
-            <span class="value">帅气小哥哥</span>
+            <span class="value">{{projectManager.name}}</span>
           </div>
           <div class="detail-row">
             <span class="keyword">项目预算：</span>
-            <span class="value">1000000.00元</span>
+            <span class="value">{{managerTaskBudgets.amount}}</span>
             <div class="row-right">
               <span class="keyword">项目奖金：</span>
-              <span class="value">50000.00元</span>
+              <span class="value">{{managerTaskBonus.amount}}</span>
             </div>
           </div>
           <div class="detail-row">
             <span class="keyword">项目客户：</span>
-            <span class="value">隔壁老王</span>
+            <span class="value">{{customer.customerName}}</span>
             <div class="row-right">
               <span class="keyword">联系电话：</span>
-              <span class="value">13629719977</span>
+              <span class="value">{{customer.customerMobile}}</span>
             </div>
           </div>
           <!-- 附件列表 -->
           <div class="row-title annex">
             <div class="title">附件：</div>
-            <div v-for="(item,index) in annexList" :key="index" class="annex-list">
-              <span class="annex-value annex-name">蓝莓项目需求文档.doc</span>
-              <span class="annex-value annex-size">(64kb)</span>
-              <a class="annex-value annex-path">下载</a>
+            <div v-for="(item,index) in managerTaskFiles.fileList" :key="index" class="annex-list">
+              <span class="annex-value annex-name">{{item.fileName}}</span>
+              <!-- <span class="annex-value annex-size">(64kb)</span> -->
+              <a :href="item.fullFileAddress" class="annex-value annex-path">下载</a>
             </div>
           </div>
           <!-- 资料 -->
           <div class="row-title description">
             <div class="title">项目简介：</div>
             <div class="desc">
-              蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓
-              蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓
-              蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓蓝莓
+              {{managerTaskIntro.text}}
             </div>
+          </div>
+          <div class="btn">
+            <el-button type="primary" v-if="managerTaskBaseInfo.status != 2" @click="confirm" size="small">确定</el-button>
           </div>
         </div>
       </div>
@@ -99,7 +100,9 @@
 <script>
   let vm;
   // path:"home/task", // 项目经理任务页面
-  import common from "@/utils/common";
+  const SUCCESS_OK = '200'
+  import { proTaskList, projectTaskDetail, confirmProjectTask } from '@/api/request'
+  import common from "@/utils/common"
   export default {
     data() {
       return {
@@ -111,23 +114,135 @@
         planList: [], // 计划数组列表
         functionDetailList: [],
         totalElements: '',
-        taskList: [1,23,4,5,5,5,5,5,5,6,5,5,5,5,5],
-        detail: [], //任务详情
-        taskSubtasks: [], //任务详情子任务
+        taskList: [],
+        managerTaskBaseInfo: {
+          name: '',
+          startTime: '',
+          endTime: '',
+          status: ''
+        },
+        managerTaskIntro: {
+          text: ''
+        },
+        projectManager: {
+          name: ''
+        },
+        managerTaskBudgets: {},
+        managerTaskBonus: {},
+        managerTaskFiles: {
+          fileList: []
+        },
+        customer: {
+          customerName: '',
+          customerMobile: ''
+        },
         page: 1, //当前页数
         size: 10, //当前显示数据条数
-        currentStatus: '', //项目状态
-        isMore: true, //加载更多是否显示
-        annexList: [1,2,3],
-        files: new Array,
+        isMore: false //加载更多是否显示
       }
     },
     mounted() {
       vm = this
+      this._proTaskList()
     },
     methods: {
       timeQuery () {
-        console.log(this.timeValue)
+        // console.log(this.timeValue)
+        if (this.timeValue == null) {
+          this.timeValue = ['','']
+        }
+        this._proTaskList()
+      },
+      // 任务列表更多
+      showMore () {
+        this.page ++
+        const data = {
+          page: this.page,
+          size: this.size,
+          startTime: this.timeValue[0],
+          endTime: this.timeValue[1]
+        }
+        proTaskList(data).then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            this.taskList = this.taskList.concat(res.data.rows)
+            this.taskId = this.taskList[0].id
+            if (this.taskId) {
+              this._projectTaskDetail(this.taskId)
+            } else {
+              this._projectTaskDetail(res.data.rows[0].id)
+              this.taskId = res.data.rows[0].id
+            }
+            this.totalElements = res.data.total
+            if (this.taskList.length < res.data.total) {
+              this.isMore = true
+            } else {
+              this.isMore = false
+            }
+          } else {
+            this.MessageSuccess(res.message)
+          }
+        })
+      },
+      // 分页任务列表
+      _proTaskList () {
+        const data = {
+          page: this.page,
+          size: this.size,
+          startTime: this.timeValue[0],
+          endTime: this.timeValue[1]
+        }
+        proTaskList(data).then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            this.taskList = res.data.rows
+            this.taskId = this.taskList[0].id
+            if (this.taskId) {
+              this._projectTaskDetail(this.taskId)
+            } else {
+              this._projectTaskDetail(res.data.rows[0].id)
+              this.taskId = res.data.rows[0].id
+            }
+            this.totalElements = res.data.total
+            if (this.taskList.length < res.data.total) {
+              this.isMore = true
+            } else {
+              this.isMore = false
+            }
+          } else {
+            this.MessageSuccess(res.message)
+          }
+        })
+      },
+      // 点击确定按钮
+      confirm () {
+        confirmProjectTask({id: this.taskId}).then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            this.MessageSuccess(res.message)
+            this._proTaskList()
+          } else {
+            this.MessageError(res.message)
+          }
+        })
+      },
+      // 获取某个任务的详情
+      _projectTaskDetail (data) {
+        projectTaskDetail({id: data}).then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            // console.log(res)
+            this.managerTaskBaseInfo = res.data.managerTaskBaseInfo
+            this.managerTaskIntro = res.data.managerTaskIntro
+            this.projectManager = res.data.projectManager
+            this.managerTaskBudgets = res.data.managerTaskBudgets.pop()
+            this.managerTaskBonus = res.data.managerTaskBonus.pop()
+            this.customer = res.data.customer
+            this.managerTaskFiles.fileList = res.data.managerTaskFiles.fileList
+          } else {
+            this.MessageError(res.message)
+          }
+        })
       },
       detailShow (item, index) {
         if (index) {
@@ -135,7 +250,9 @@
         } else {
           vm.current = 0
         }
-      },
+        this.taskId = item.id
+        this._projectTaskDetail(item.id)
+      }
     }
   }
 </script>
@@ -209,7 +326,7 @@
               .annex-value {
                 display: inline-block;
                 color:#7d7979;
-                margin-right: 5px;
+                margin-right: 15px;
               }
               .annex-name {
                 margin-left: 15px;
@@ -217,11 +334,17 @@
               .annex-path {
                 cursor: pointer;
               }
+              .annex-path:hover {
+                color: green;
+              }
             }
             .desc{
               padding: 0 0 0 5px;
               line-height: 22px;
             }
+          }
+          .btn {
+            text-align: center;
           }
         }
       }
@@ -238,6 +361,7 @@
           .block {
             padding: 10px 0 0 20px;
             .el-input__inner {
+              width: 100%;
               border: 0;
               outline: none;
               background: #fff;

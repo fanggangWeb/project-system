@@ -4,9 +4,9 @@
       首页 > 跟进
       <div class="searchContent">
         <div class="searchProject">
-          <el-input placeholder="项目名称" v-model="projectName" clearable>
+          <el-input placeholder="项目名称" @change="nameSearch" v-model="projectName" clearable>
           </el-input>
-          <a href="" @click.prevent="nameSearch"><i class="el-icon-search"></i></a>
+          <!-- <a href="" @click.prevent="nameSearch"><i class="el-icon-search"></i></a> -->
         </div>
         <!-- <div class="selectChoose">
           <el-select v-model="projectStatus" clearable placeholder="跟进人员">
@@ -15,67 +15,64 @@
           </el-select>
         </div> -->
         <el-date-picker
-          style="width:130px;margin-left:20px;"
+          style="margin:0 20px;"
           v-model="searchTime"
           type="date"
+          @change="timeQuery"
+          value-format="yyyy-MM-dd"
           placeholder="登记时间">
         </el-date-picker>
-        <el-button class="addProject" type="success" @click="showState = true">添加</el-button>
+        <!-- <el-button class="addProject" type="success" @click="showState = true">添加</el-button> -->
       </div>
     </div>
     <div class="project-table">
       <el-table :header-cell-style="{textAlign: 'center'}"  :data="projectsList" :stripe="true" style="width: 100%">
         <el-table-column type="index" align="center" label="序号" width="60">
         </el-table-column>
-        <el-table-column prop="name" label="项目名称">
+        <el-table-column prop="name" align="center" label="项目名称">
         </el-table-column>
-        <el-table-column prop="name" label="客户名称">
+        <el-table-column prop="customer.customerName" align="center" label="客户名称">
         </el-table-column>
-        <el-table-column prop="name" label="跟进人员">
+        <el-table-column prop="salesPersons" align="center" label="跟进人员">
+          <template slot-scope="scope">
+            <span v-for="(item,index) in scope.row.salesPersons" :key="index">
+              {{item.name}}
+            </span>
+          </template>
         </el-table-column>
-        <el-table-column prop="name" label="跟进情况">
+        <el-table-column prop="cheduleCount" align="center" label="跟进次数">
         </el-table-column>
-        <el-table-column prop="startTime" align="center" label="创建时间">
+        <el-table-column prop="createTime" align="center" label="创建时间">
         </el-table-column>
         <el-table-column align="center" label="操作">
           <template slot-scope="scope">
-            <el-button type="success" size="small" @click="detailGo(scope.row)">反馈</el-button>
+            <el-button type="success" size="small" v-if="scope.row.saleTaskStatusType.id!=9" @click="complete(scope.row)">反馈</el-button>
             <el-button type="primary" size="small" @click="detailGo(scope.row)">详情</el-button>
           </template>
         </el-table-column>
       </el-table>
     </div>
-    <el-dialog :close-on-click-modal="false" title="指派任务" :visible.sync="showState" width="50%" center>
+    <el-dialog :close-on-click-modal="false" title="更改反馈状态" :visible.sync="showState" width="50%" center>
       <el-form :model="form" ref="form" :rules="rules" label-width="120px">
-        <el-form-item label="项目名称" prop="name">
+        <!-- <el-form-item label="项目名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入项目名称"></el-input>
         </el-form-item>
         <el-form-item label="客户名称" prop="customer">
           <el-input v-model="form.customer" placeholder="请输入项目名称"></el-input>
-        </el-form-item>
-        <el-form-item label="跟进人员" prop="follow">
-          <el-select v-model="form.follow" clearable placeholder="选择跟进人员">
-            <el-option v-for="item in followList" :key="item.value" :label="item.label" :value="item.value">
-            </el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="联系电话" prop="telephone">
-          <el-input v-model="form.telephone" placeholder="请输入联系电话"></el-input>
-        </el-form-item>
-        <!-- <el-form-item label="添加附件">
-          <el-upload
-            class="upload-demo"
-            action="https://jsonplaceholder.typicode.com/posts/"
-            :on-success="handleSuccess"
-            :on-error="handleError"
-            multiple
-            :file-list="form.fileList">
-            <el-button size="small" type="primary">上传附件</el-button>
-          </el-upload>
         </el-form-item> -->
-        <el-form-item label="项目简介" prop="desc">
+        <el-row>
+          <el-col :offset="5" :span="12">
+            <el-form-item style="font-size:16px;" label="更改状态" prop="statusTypeId">
+              <el-select v-model="form.statusTypeId " clearable placeholder="选择更改状态">
+                <el-option v-for="item in statusList" :key="item.id" :label="item.name" :value="item.id">
+                </el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <!-- <el-form-item label="项目简介" prop="desc">
           <el-input type="textarea" v-model="form.desc" placeholder="请输入项目简介"></el-input>
-        </el-form-item>
+        </el-form-item> -->
       </el-form>
       <span slot="footer" class="dialog-footer">
         <el-button type="success" @click="submit">提 交</el-button>
@@ -94,7 +91,9 @@
 
 <script>
   let vm
+  const SUCCESS_OK = '200'
   import { mapGetters, mapMutations } from 'vuex'
+  import { salesFollowList, updateTaskStatus, delTaskChedule } from '@/api/request'
   export default {
     data() {
       return {
@@ -103,26 +102,62 @@
         page: 1,
         size: 10,
         searchTime: '',
-        projectsList: [1,2],
+        projectsList: [],
         status: {},
         totalElements: 10,
         projectName: '',
         showState: false,
+        statusList: [
+          {
+            "id": 1,
+            "name": "未联系上"
+          },
+          {
+            "id": 2,
+            "name": "已完成初次沟通"
+          },
+          {
+            "id": 3,
+            "name": "需求沟通阶段"
+          },
+          {
+            "id": 4,
+            "name": "首次报价"
+          },
+          {
+            "id": 5,
+            "name": "梳理详细需求"
+          },
+          {
+            "id": 6,
+            "name": "开始详细报价"
+          },
+          {
+            "id": 7,
+            "name": "详细报价已完成"
+          },
+          {
+            "id": 8,
+            "name": "商务洽谈中"
+          },
+          {
+            "id": 9,
+            "name": "已签约"
+          },
+          {
+            "id": 10,
+            "name": "放弃跟进"
+          },
+          {
+            "id": 11,
+            "name": "项目搁置阶段"
+          }
+        ],
         form: {
-          name: '',
-          follow: '',
-          customer: '',
-          telephone: '',
-          desc: '',
-          // fileList: []
+          statusTypeId: ''
         },
         rules: {
-          name:[{required: true, message: '请输入项目名称', trigger: 'blur'}],
-          endTime:[{required: true, message: '请选择项目结束时间', trigger: 'blur'}],
-          follow:[{required: true, message: '请选择跟进人员', trigger: 'blur'}],
-          customer:[{required: true, message: '请输入客户名称', trigger: 'blur'}],
-          telephone:[{required: true, message: '请输入联系电话', trigger: 'blur'}],
-          desc:[{required: true, message: '请输入项目简介', trigger: 'blur'}]
+          statusTypeId:[{required: true, message: '请选择更改状态', trigger: 'blur'}]
         }
       }
     },
@@ -133,9 +168,40 @@
         }
       }
     },
-    mounted() {},
+    mounted() {
+      this._salesFollowList()
+    },
     methods: {
-      ...mapMutations(['projectId']),
+      ...mapMutations(['taskId']),
+      _salesFollowList () { // 业务员跟进列表
+        let data = {
+          projectName: this.projectName,
+          page: this.page,
+          size: this.size,
+          registrationTime: this.searchTime
+        }
+        salesFollowList(data).then(res => {
+          res = res.data
+          console.log(res)
+          if (res.state == SUCCESS_OK) {
+            this.totalElements = res.data.total
+            this.projectsList = res.data.rows
+          } else {
+            this.MessageError('连接错误')
+          }
+        })
+      },
+      complete (item) {
+        this.showState = true
+        this.taskId = item.id
+      },
+      timeQuery () {
+        this.page = 1
+        if (this.searchTime == null) {
+          this.searchTime = ''
+        }
+        this._salesFollowList()
+      },
       handleSuccess (response, file, fileList) {
         console.log(response)
       },
@@ -143,21 +209,37 @@
         this.MessageError('上传附件失败')
       },
       detailGo (item) {
-        this.projectId(item)
+        this.taskId(item.id)
         this.$router.push({path: '/home/followDetail'})
       },
-      nameSearch () {},
+      nameSearch () {
+        this.page = 1
+        this._salesFollowList()
+      },
       jump (data) {
         this.$router.push(data)
       },
       handleCurrentChange() {
-        console.log(this.page)
+        this.salesFollowList()
       },
       // 提交表单
       submit () {
         this.$refs['form'].validate((valid) => {
           if (valid) {
-            alert('submit!')
+            let data = {
+              taskId: this.taskId,
+              statusTypeId: this.form.statusTypeId
+            }
+            updateTaskStatus(data).then(res => {
+              res = res.data
+              if (res.state == SUCCESS_OK) {
+                this.MessageSuccess('更改状态成功')
+                this.showState = false
+                this._salesFollowList()
+              } else {
+                this.MessageError(res.message)
+              }
+            })
           } else {
             console.log('error submit!!');
             return false

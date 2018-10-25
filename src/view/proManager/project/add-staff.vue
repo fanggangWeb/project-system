@@ -8,13 +8,13 @@
       <el-button type="info" size="small" style="margin-left:20px;" @click="jump('/home/projectDetail/participants')">返回</el-button>
       <div class="searchContent">
         <div class="searchProject">
-          <el-input placeholder="人员名称" v-model="staffName" clearable>
+          <el-input placeholder="人员名称" v-model="staffName" @change="nameSearch" clearable>
           </el-input>
-          <a href="" @click.prevent="nameSearch"><i class="el-icon-search"></i></a>
+          <!-- <a href="" @click.prevent="nameSearch"><i class="el-icon-search"></i></a> -->
         </div>
         <div class="selectChoose">
-          <el-select v-model="positionId" clearable placeholder="目前状态">
-            <el-option v-for="item in positionList" :key="item.value" :label="item.label" :value="item.value">
+          <el-select v-model="statusId" clearable @change="nameSearch" placeholder="目前状态">
+            <el-option v-for="item in statusList" :key="item.isFree" :label="item.text" :value="item.id">
             </el-option>
           </el-select>
         </div>
@@ -33,19 +33,24 @@
           <el-table :header-cell-style="{background:'#FAFAFA',textAlign: 'center'}"  :data="staffList" :stripe="true" style="width: 100%">
             <el-table-column type="index" align="center" label="序号" width="60">
             </el-table-column>
-            <el-table-column prop="name" label="名称" style="width: 20%">
+            <el-table-column prop="name" label="名称" align="center">
             </el-table-column>
-            <el-table-column prop="number" align="center" label="工号" style="width: 20%">
+            <el-table-column prop="jobnumber" align="center" label="工号">
             </el-table-column>
-            <el-table-column prop="position" align="center" label="岗位" style="width: 20%">
+            <el-table-column prop="position" align="center" label="岗位">
             </el-table-column>
-            <el-table-column prop="department" align="center" label="所属部门" style="width: 20%">
+            <el-table-column prop="department.name" align="center" label="所属部门">
             </el-table-column>
-            <el-table-column prop="positive" align="center" label="转正情况" style="width: 20%">
+            <el-table-column prop="positive" align="center" label="转正情况">
+              <template slot-scope="scope">
+                <span>{{scope.row.positive == 1 ? '已转正': '未转正'}}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="userStatus.text" align="center" label="状态">
             </el-table-column>
             <el-table-column align="center" label="操作">
               <template slot-scope="scope">
-                <el-button type="success" size="small" @click="add(scope.row)">添加</el-button>
+                <el-button type="success" size="small" v-if="scope.row.userStatus.id == 1" @click="add(scope.row)">添加</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -63,49 +68,149 @@
 </template>
 <script>
   let vm
-  import {
-    mapGetters,
-    mapMutations
-  } from 'vuex'
+  const SUCCESS_OK = '200'
+  import { groupMember, allStaff, findUserStatus, addDeveloper } from '@/api/request'
+  import { mapGetters, mapMutations } from 'vuex'
   export default {
     data() {
       return {
         staffName: '',
-        positionId: '',
-        positionList: [],
+        statusId: '',
+        statusList: [],
         isCateShow: false,
         showState: false,
         userId: '',
         currentIndex: 0,
-        staffList: [1,2],
+        staffList: [],
+        tabValue: 0,
         page: 1,
         size: 10,
         totalElements: 10,
-        tabs: [{name: '组员', value: 1}, {name: '全部人员', value: 1}]
+        tabs: [{name: '组员', value: 0}, {name: '全部人员', value: 1}]
       }
     },
     computed: {
-      ...mapGetters([])
+      ...mapGetters(['getprojectId'])
     },
     watch: {
     },
     mounted() {
       vm = this
-      console.log(this.$route)
+      this._findUserStatus()
+      this._groupMember()
     },
     methods: {
       ...mapMutations([]),
       searchByPerson() {
       },
       changeTab (item, index) {
+        this.staffList = []
+        this.totalElements = 0
         this.currentIndex = index
+        this.tabValue = item.value
+        this.page = 1
+        if (this.tabValue == 0) {
+          // 进行组员的操作
+          this._groupMember()
+        } else {
+          this._allStaff()
+        }
       },
-      nameSearch () {},
-      add (item) {},
+      nameSearch () {
+        this.page = 1
+        if (this.tabValue == 0) {
+          // 进行组员的操作
+          this._groupMember()
+        } else {
+          this._allStaff()
+        }
+      },
+      add (item) {
+        const data = {
+          userInfoId: item.id,
+          projectId: this.getprojectId
+        }
+        this.$confirm('此操作将添加'+item.name+'添加到当前项目, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          addDeveloper(data).then(res => {
+            res = res.data
+            if (res.state == SUCCESS_OK) {
+              this.MessageSuccess(res.message)
+              if (this.tabValue == 0) {
+                // 进行组员的操作
+                this._groupMember()
+              } else {
+                this._allStaff()
+                console.log(this.tabValue)
+              }
+            } else {
+              this.MessageError(res.message)
+            }
+          })
+        }).catch(() => {
+        })
+      },
+      // 所有人员的列表
+      _allStaff () {
+        const data = {
+          page: this.page,
+          size: this.size,
+          name: this.staffName,
+          statusId: this.statusId
+        }
+        allStaff(data).then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            this.staffList = res.data.rows
+            this.totalElements = res.data.total
+          } else {
+            this.MessageError(res.message)
+          }
+        })
+      },
+      // 所有组员的列表
+       _groupMember () {
+        const data = {
+          page: this.page,
+          size: this.size,
+          name: this.staffName,
+          statusId: this.statusId
+        }
+        groupMember(data).then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            this.staffList = res.data.rows
+            this.totalElements = res.data.total
+          } else {
+            this.MessageError(res.message)
+          }
+        })
+      },
+      // 获取人员的状态
+      _findUserStatus () {
+        findUserStatus().then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            this.statusList = res.data
+          } else {
+            this.MessageError(res.message)
+          }
+        })
+      },
       jump(url, id) {
         vm.$router.push(url)
       },
-      handleCurrentChange () {}
+      handleCurrentChange () {
+        if (this.tabValue == 0) {
+          // 进行组员的操作
+          this._groupMember()
+        } else {
+          this._allStaff()
+        }
+      }
     },
     destroyed() {}
   }

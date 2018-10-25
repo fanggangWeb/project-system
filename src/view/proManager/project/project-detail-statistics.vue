@@ -6,15 +6,15 @@
       <!-- 1.1进度 -->
       <ul class="numbers-speed">
         <li class="now line">
-          <p>{{status.now}}</p>
+          <p>{{status.cost}}</p>
           <span>目前成本</span>
         </li>
         <li class="pending line">
-          <p>{{status.expected}}</p>
+          <p>{{status.endTime}}</p>
           <span>预计时间</span>
         </li>
         <li class="delay">
-          <p>{{status.delay}}</p>
+          <p>{{status.delayTime}}</p>
           <span>延迟时间</span>
         </li>
       </ul>
@@ -23,19 +23,18 @@
 </template>
 <script>
   import { mapGetters,mapMutations  } from 'vuex'
-  let vm;
+  const SUCCESS_OK = '200'
+  import { statistics } from '@/api/request'
+  let vm
   export default {
-    name: "projectStatistics",
     data() {
       return {
         project: {},
         status: {
-          now: '200064.60元',
-          expected: '2018-9-31',
-          delay: '2018-10-31'
+          cost: '',
+          endTime: '',
+          delayTime: ''
         },
-        userList: [],
-        demandList: [],
         currentTime: new Date(),
         currentdate: ''
       }
@@ -51,71 +50,47 @@
       }
     },
     mounted() {
-      vm = this;
+      vm = this
+      this._statistics()
       this.getNowFormatDate()
-      let date = new Date();
+      let date = new Date()
       vm.currentTime = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate()
     },
    computed: {
       ...mapGetters(['getprojectId'])
     },
     methods: {
-      ...mapMutations(['demandId','addOrUpdate']),
+      ...mapMutations([]),
       // 获取项目统计数据
-      getProjectsStatistics() {
-        let req = new Object();
-        req.projectsId = vm.getprojectId;
-        vm.axios.post(vm.urlApi.getProjectsStatistics, req).then(res => {
-          if (res.code == 0) {
-            console.log(res)
-            vm.project = res.data.project;
-            vm.status = res.data.status;
-            vm.demandList = res.data.project.others.demandList;
-            vm.userList = res.data.project.others.projectsUsers
+      _statistics () {
+        const data = {
+          projectId: this.getprojectId
+        }
+        statistics(data).then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            this.status = res.data
+          } else {
+            this.MessageError(res.message)
           }
         })
       },
       getNowFormatDate() {
-        var date = new Date();
-        var seperator1 = "-";
-        var year = date.getFullYear();
-        var month = date.getMonth() + 1;
-        var strDate = date.getDate();
+        var date = new Date()
+        var seperator1 = "-"
+        var year = date.getFullYear()
+        var month = date.getMonth() + 1
+        var strDate = date.getDate()
         if (month >= 1 && month <= 9) {
-            month = "0" + month;
+            month = "0" + month
         }
         if (strDate >= 0 && strDate <= 9) {
-            strDate = "0" + strDate;
+            strDate = "0" + strDate
         }
-        var currentdate = year + seperator1 + month + seperator1 + strDate;
+        var currentdate = year + seperator1 + month + seperator1 + strDate
         // return currentdate;
         this.currentdate = currentdate
-      },
-      // 跳转到需求详情
-      jump(url, demandId, addOrUpdate) {
-        if (demandId !== '') {
-          vm.demandId(demandId)
-        }
-       vm.addOrUpdate(addOrUpdate)
-        vm.$router.push(url)
-      },
-      // 删除需求变更
-      deleteDemand(item) {
-        let req = new Object();
-        req.projectsDemandId = item.id;
-        console.log(req)
-        vm.$confirm('确认删除此需求', '提示', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }).then(() => vm.axios.post(vm.urlApi.deleteProjectsDemand, req)
-        ).then(res => {
-          if (res.code == 0) {
-            vm.demandList.pop(item);
-            vm.$message.success('删除成功')
-          }
-        })
-      },
+      }
     }
   }
 </script>

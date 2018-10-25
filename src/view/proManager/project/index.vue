@@ -4,13 +4,13 @@
       首页 > 项目
       <div class="searchContent">
         <div class="searchProject">
-          <el-input placeholder="项目名称" v-model="projectName" clearable>
+          <el-input placeholder="项目名称" @change="nameSearch" v-model="projectName" clearable>
           </el-input>
-          <a href="" @click.prevent="nameSearch"><i class="el-icon-search"></i></a>
+          <!-- <a href="" @click.prevent="nameSearch"><i class="el-icon-search"></i></a> -->
         </div>
         <div class="selectChoose">
-          <el-select v-model="projectStatus" clearable placeholder="目前状态">
-            <el-option v-for="item in options12" :key="item.value" :label="item.label" :value="item.value">
+          <el-select v-model="projectStatus" @change="statusChange" clearable placeholder="目前状态">
+            <el-option v-for="item in options12" :key="item.id" :label="item.text" :value="item.id">
             </el-option>
           </el-select>
         </div>
@@ -19,19 +19,19 @@
     </div>
     <div class="project-content">
       <div class="project-top">
-        <div class="project-top-up">100</div>
+        <div class="project-top-up">{{summary.projectStatusAll}}</div>
         <div class="project-top-under"><img src="../../../assets/project-statistics-slices/projectNumber.png">项目数量</div>
       </div>
-      <div class="project-top">
-        <div class="project-top-up">100</div>
-        <div class="project-top-under"><img src="../../../assets/project-statistics-slices/complete.png"> 已结项</div>
-      </div>
-      <div class="project-top">
-        <div class="project-top-up">100</div>
+       <div class="project-top">
+        <div class="project-top-up">{{summary.projectStatusOne}}</div>
         <div class="project-top-under"><img src="../../../assets/project-statistics-slices/haveInHand.png"> 进行中</div>
       </div>
       <div class="project-top">
-        <div class="project-top-up">100</div>
+        <div class="project-top-up">{{summary.projectStatusTwo}}</div>
+        <div class="project-top-under"><img src="../../../assets/project-statistics-slices/complete.png"> 已结项</div>
+      </div>
+      <div class="project-top">
+        <div class="project-top-up">{{summary.projectStatusThree}}</div>
         <div class="project-top-under"><img src="../../../assets/project-statistics-slices/hangInTheAir.png"> 交付状态</div>
       </div>
     </div>
@@ -39,11 +39,11 @@
       <el-table :header-cell-style="{background:'#FAFAFA',textAlign: 'center'}"  :data="projectsList" :stripe="true" style="width: 100%">
         <el-table-column type="index" align="center" label="序号" width="60">
         </el-table-column>
-        <el-table-column prop="name" label="名称" style="width: 20%">
+        <el-table-column prop="projectBaseInfo.name" align="center" label="名称" style="width: 20%">
         </el-table-column>
-        <el-table-column prop="startTime" align="center" label="开始时间" style="width: 20%">
+        <el-table-column prop="projectBaseInfo.startTime" align="center" label="开始时间" style="width: 20%">
         </el-table-column>
-        <el-table-column prop="endTime" align="center" label="结束时间" style="width: 20%">
+        <el-table-column prop="projectBaseInfo.endTime" align="center" label="结束时间" style="width: 20%">
         </el-table-column>
         <el-table-column align="center" label="操作">
           <template slot-scope="scope">
@@ -65,73 +65,89 @@
 <script>
   let vm
   // path: '/home/project' // 项目经理项目首页
+  const SUCCESS_OK = '200'
+  import { allProSummary, proProjectList } from '@/api/request'
   import { mapGetters, mapMutations } from 'vuex'
   export default {
     data() {
       return {
         options12: [{
-          value: 'CONDUCTING',
-          label: '进行中'
-        }, {
-          value: 'FINISH',
-          label: '已完成'
-        }, {
-          value: 'NOT_FINISH',
-          label: '未完成'
-        }, {
-          value: 'STOPPING',
-          label: '暂停'
-        }, {
-          value: 'AUDITING',
-          label: '审查中'
+          "id": 1,
+          "text": "进行中"
+        },
+        {
+          "id": 2,
+          "text": "已结项"
+        },
+        {
+          "id": 3,
+          "text": "已交付"
         }],
-        projectStatus: null,
-        list: [{
-            'images': require('../../../assets/project-statistics-slices/projectNumber.png'),
-            'si': '100',
-            'ss': '项目数'}, {
-            'images': require('../../../assets/project-statistics-slices/complete.png'),
-            'si': '100',
-            'ss': '已完成'}, {
-            'images': require('../../../assets/project-statistics-slices/haveInHand.png'),
-            'si': '100',
-            'ss': '进行中'}, {
-            'images': require('../../../assets/project-statistics-slices/hangInTheAir.png'),
-            'si': '100',
-            'ss': '交付状态'
-          }],
-        options: [{
-          value: 'CONDUCTING',
-          label: '进行中'
-        }, {
-          value: 'FINISH',
-          label: '已完成'
-        }, {
-          value: 'NOT_FINISH',
-          label: '未完成'
-        }],
+        summary: {},
+        projectStatus: '',
         page: 1,
-        size: 10,
-        projectsList: [1,2],
+        size: 5,
+        projectsList: [],
         status: {},
         totalElements: 10,
         projectName: ''
       }
     },
     watch: {},
-    mounted() {},
+    mounted() {
+      this._allProSummary()
+      this._proProjectList()
+    },
     methods: {
       ...mapMutations(['projectId']),
       detailGo (item) {
-        this.projectId(item)
+        this.projectId(item.id)
         this.$router.push({path: '/home/projectDetail'})
       },
-      nameSearch () {},
+      // 获取头部所有项目的统计
+      _allProSummary () {
+        allProSummary().then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            // console.log(res.data)
+            this.summary = res.data
+          } else {
+            this.MessageError(res.message)
+          }
+        })
+      },
+      // 获取项目列表
+      _proProjectList () {
+        const data = {
+          page: this.page,
+          size: this.size,
+          name: this.projectName,
+          status: this.projectStatus
+        }
+        proProjectList(data).then(res => {
+          res = res.data
+          console.log(res.data)
+          if (res.state == SUCCESS_OK) {
+            this.projectsList = res.data.rows
+            this.totalElements = res.data.total
+          } else {
+            this.MessageError(res.message)
+          }
+        })
+      },
+      statusChange () {
+        this.page = 1
+        this._proProjectList()
+      },
+      nameSearch () {
+        this.page = 1
+        this._proProjectList()
+      },
       jump (data) {
         this.$router.push(data)
       },
       handleCurrentChange() {
-        console.log(this.page)
+        // console.log(this.page)
       }
     }
   }
@@ -215,6 +231,7 @@
         .project-top-up {
           font-size: 60px;
           color: rgba(103, 103, 103, 1);
+          height: 80px;
           line-height: 80px;
         }
         .project-top-under {

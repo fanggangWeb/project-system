@@ -18,13 +18,15 @@ const store = new Vuex.Store({
     routers: get('routers'),
     projectId: get('projectId'),
     staffId: get('staffId'),
-    dingShow: get('dingShow') || true
+    dingShow: get('dingShow') || true,
+    taskId: get('taskId')
   },
   getters: {
     getrouters: state => state.routers,
     getprojectId: state => state.projectId,
     getstaffId: state => state.staffId,
-    getdingShow: state => state.dingShow
+    getdingShow: state => state.dingShow,
+    gettaskId: state => state.taskId
   },
   mutations: {
     projectId (state, data) {
@@ -42,6 +44,10 @@ const store = new Vuex.Store({
     dingShow (state, data) {
       state.dingShow = data
       set('dingShow', data)
+    },
+    taskId (state, data) {
+      state.taskId = data
+      set('taskId', data)
     }
   }
 })

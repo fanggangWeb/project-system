@@ -5,15 +5,18 @@
       <el-table :header-cell-style="{background:'#FAFAFA',textAlign: 'center'}"  :data="staffList" :stripe="true" style="width: 100%">
         <el-table-column type="index" align="center" label="序号" width="60">
         </el-table-column>
-        <el-table-column prop="name" label="名称" style="width: 20%">
+        <el-table-column prop="name" label="名称" align="center">
         </el-table-column>
-        <el-table-column prop="number" align="center" label="工号" style="width: 20%">
+        <el-table-column prop="jobnumber" align="center" label="工号">
         </el-table-column>
-        <el-table-column prop="position" align="center" label="岗位" style="width: 20%">
+        <el-table-column prop="position" align="center" label="岗位">
         </el-table-column>
-        <el-table-column prop="department" align="center" label="所属部门" style="width: 20%">
+        <el-table-column prop="department.name" align="center" label="所属部门">
         </el-table-column>
-        <el-table-column prop="positive" align="center" label="转正情况" style="width: 20%">
+        <el-table-column prop="positive" align="center" label="转正情况">
+          <template slot-scope="scope">
+            <span>{{scope.row.positive == 1 ? '已转正': '未转正'}}</span>
+          </template>
         </el-table-column>
         <el-table-column align="center" label="操作">
           <template slot-scope="scope">
@@ -32,21 +35,67 @@
   </div>
 </template>
 <script>
+  const SUCCESS_OK = '200'
+  import { projectDeveloper, delDeveloper } from '@/api/request'
+  import { mapGetters, mapMutations } from 'vuex'
   export default {
     data () {
       return {
         page: 1,
         size: 10,
-        staffList: [1,2],
-        totalElements: 10
+        staffList: [],
+        totalElements: 0
       }
     },
+    computed: {
+      ...mapGetters(['getprojectId'])
+    },
+    mounted () {
+      this._projectDeveloper()
+    },
     methods: {
+      // 获取所有参与的开发者列表
+      _projectDeveloper () {
+        const data = {
+          page: this.page,
+          size: this.size,
+          projectId: this.getprojectId
+        }
+        projectDeveloper(data).then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            this.staffList = res.data.rows
+            this.totalElements = res.data.total
+          } else {
+            this.MessageError(res.message)
+          }
+        })
+      },
       handleCurrentChange() {
         console.log(this.page)
       },
       del (item) {
-        console.log(item)
+        // console.log(item)
+        const data = {
+          userInfoId: item.id,
+          projectId: this.getprojectId
+        }
+        this.$confirm('此操作将删除该成员, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          delDeveloper(data).then(res => {
+            res = res.data
+            if (res.state == SUCCESS_OK) {
+              this.MessageSuccess(res.message)
+              this._projectDeveloper()
+            } else {
+              this.MessageError(res.message)
+            }
+          })
+        }).catch(() => {
+        })
       },
       jump (url) {
         this.$router.push(url)

@@ -9,25 +9,33 @@
       </div>
     </div>
     <div class="desc">
-      <p class="title">蓝莓app非常的优秀蓝莓app非常的优秀蓝莓app非常的优秀蓝莓app非常的优秀蓝莓app非常的优秀蓝莓app非常的优秀</p>
+      <p class="title">{{this.detail}}</p>
       <div class="time">
-        <span>开始时间：2018-10-07</span>
-        <span>结束时间：2018-10-30</span>
+        <span>开始时间：{{this.startTime}}</span>
+        <span>结束时间：{{this.endTime}}</span>
       </div>
     </div>
     <div class="header">
       <el-button size="small" type="success" class="hidenBtn" @click="showState = true">
         导入表格
       </el-button>
-      <el-button size="small" type="primary" style="margin-right:20px">导出表格</el-button>
+      <el-button size="small" @click="_exportXls" type="primary" style="margin-right:20px">导出表格</el-button>
     </div>
     <div class="project-table">
-      <el-table :header-cell-style="{background:'#FAFAFA',textAlign: 'center'}" :data="markList" :stripe="true" style="width: 100%">
+      <el-table :header-cell-style="{background:'#FAFAFA',textAlign: 'center'}" :data="planList" :stripe="true" style="width: 100%">
         <el-table-column type="index" align="center" label="序号" width="60">
         </el-table-column>
-        <el-table-column prop="name" label="功能模块" style="width: 20%">
+        <el-table-column prop="business" label="业务名称" align="center">
         </el-table-column>
-        <el-table-column prop="job" label="描述" style="width: 20%">
+        <el-table-column prop="module" label="模块名称" align="center">
+        </el-table-column>
+        <el-table-column prop="function" label="功能名称" align="center">
+        </el-table-column>
+        <el-table-column prop="startTime" label="开始时间" align="center">
+        </el-table-column>
+        <el-table-column prop="endTime" label="结束时间" align="center">
+        </el-table-column>
+        <el-table-column prop="detail" label="描述" align="center">
         </el-table-column>
       </el-table>
     </div>
@@ -40,6 +48,7 @@
         <el-form-item label="开始时间" prop="startTime">
           <el-date-picker
             v-model="form.startTime"
+            value-format="yyyy-MM-dd"
             type="date"
             placeholder="开始时间">
           </el-date-picker>
@@ -47,12 +56,13 @@
         <el-form-item label="结束时间" prop="endTime">
           <el-date-picker
             v-model="form.endTime"
+            value-format="yyyy-MM-dd"
             type="date"
             placeholder="结束时间">
           </el-date-picker>
         </el-form-item>
-        <el-form-item label="版本描述" prop="desc">
-          <el-input type="textarea"  v-model="form.desc" style="width:300px !important" placeholder="请输入描述"></el-input>
+        <el-form-item label="版本描述" prop="detail">
+          <el-input type="textarea"  v-model="form.detail" style="width:300px !important" placeholder="请输入描述"></el-input>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
@@ -67,14 +77,13 @@
       :total="totalElements">
       </el-pagination>
     </div>
-    <el-dialog title="上传计划列表" :close-on-click-modal="false
-    " :visible.sync="showState" width="35%" center>
+    <el-dialog title="上传计划列表" :close-on-click-modal="false" :visible.sync="showState" width="35%" center>
       <el-row style="margin-top:20px">
         <el-col :offset="4" :span="8">
-          <el-button type="primary"><a style="color:white" :href="downUrl">下载excel模板</a></el-button>
+          <el-button type="primary" @click="downTem"><span style="color:white">下载excel模板</span></el-button>
         </el-col>
         <el-col :span="8">
-          <el-upload :action="uploadUrl" :file-list="fileList" :data="dataParams()" :on-success="isDemand" :show-file-list="false">
+          <el-upload :action="this.HTTP+'/project/plan/importTemplate'" name="file" :file-list="fileList" :data="dataParams()" :on-success="isDemand" :show-file-list="false">
             <el-button style="background-color:#45B78D;border-color:none;color:white">上传excel表格
             </el-button>
           </el-upload>
@@ -88,36 +97,38 @@
   </div>
 </template>
 <script>
+  const SUCCESS_OK = '200'
+  import { milestoneList, milestoneDetail, addMileStone, mileStonePlanList, mileStoneXlsTem, exportXls } from '@/api/request'
+  import { mapGetters, mapMutations } from 'vuex'
   export default {
     data() {
       return {
         current: 0,
-        tabList: [{
-          name: '版本1'
-        }, {
-          name: '版本2'
-        }, {
-          name: '版本3'
-        }],
+        tabList: [],
         showState: false,
         Visible: false,
         page: 1,
         size: 5,
-        totalElements: 10,
+        stoneId: '',
+        name: '',
+        totalElements: 0,
         downUrl: '',
-        markList: [1,2,3,4,5],
+        detail: '',
+        startTime: '',
+        endTime: '',
+        planList: [],
         uploadUrl: '',
         fileList: [],
         nextIndex: '',
         form: {
           startTime: '',
           endTime: '',
-          desc: ''
+          detail: ''
         },
         rules: {
           startTime: [{required:true, message: '请选择开始时间', trigger: 'blur'}],
           endTime: [{required:true, message: '请选择结束时间', trigger: 'blur'}],
-          desc: [{required:true, message: '请输入版本描述', trigger: 'blur'}]
+          detail: [{required:true, message: '请输入版本描述', trigger: 'blur'}]
         }
       }
     },
@@ -128,14 +139,74 @@
         }
       }
     },
+    computed: {
+      ...mapGetters(['getprojectId'])
+    },
+    mounted () {
+      this._milestoneList()
+    },
     methods: {
       changeTab(item, index) {
         this.current = index
+        this.startTime = item.startTime
+        this.endTime = item.endTime
+        this.detail = item.detail
+        this.stoneId = item.id
+        this.name = item.name
+        this._mileStonePlanList()
       },
       dataParams() {
         return {
-          projectsId: this.getprojectId
+          projectMilestoneId : this.stoneId
         }
+      },
+      // 计划列表的模板下载
+      downTem () {
+        mileStoneXlsTem().then(res => {
+          let a = document.createElement('a')
+          let url = window.URL.createObjectURL(new Blob([res.data]))
+          a.href = url
+          a.download = 'staff.xls'
+          a.click()
+          a.remove()
+        })
+      },
+      // 里程碑列表导航栏
+      _milestoneList () {
+        milestoneList({projectId: this.getprojectId}).then(res => {
+          res = res.data
+          const data = res.data
+          if (res.state == SUCCESS_OK) {
+            // console.log(data)
+            this.tabList = data
+            this.detail = data[0].detail
+            this.startTime = data[0].startTime
+            this.endTime = data[0].endTime
+            this.stoneId = data[0].id
+            this.name = data[0].name
+            this._mileStonePlanList()
+          } else {
+            this.MessageError(res.message)
+          }
+        })
+      },
+      // 里程碑计划列表
+      _mileStonePlanList () {
+        const data = {
+          page: this.page,
+          size: this.size,
+          projectMilestoneId: this.stoneId
+        }
+        mileStonePlanList(data).then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            this.planList = res.data.rows
+            this.totalElements = res.data.total
+            // console.log(res.data)
+          } else {
+            this.MessageError(res.message)
+          }
+        })
       },
       addmark () {
         this.nextIndex = this.tabList.length + 1
@@ -145,27 +216,57 @@
       confirm () {
         this.$refs['form'].validate((valid) => {
           if (valid) {
-            alert('submit!');
-            this.Visible = false
+            // alert('submit!');
+            this.form.name = '版本'+ this.nextIndex
+            this.form.project = {
+              id: this.getprojectId
+            }
+            addMileStone(this.form).then(res => {
+              res = res.data
+              if (res.state == SUCCESS_OK) {
+                this.Visible = false
+                this.MessageSuccess(res.message)
+                this.current = 0
+                this._milestoneList()
+              } else {
+                this.MessageError(res.message)
+              }
+            })
           } else {
-            console.log('error submit!!');
-            return false;
+            console.log('error submit!!')
+            return false
           }
         })
       },
       handleCurrentChange() {
-        console.log(this.page)
+        this._mileStonePlanList()
       },
-      // 获取下载模板
-      downTem() {},
+      // 导出计划列表
+      _exportXls () {
+        const data = {
+          projectMilestoneId: this.stoneId
+        }
+        // console.log(this.name)
+        exportXls(data).then(res => {
+          if (res.status == SUCCESS_OK) {
+            let a = document.createElement('a')
+            let url = window.URL.createObjectURL(new Blob([res.data]))
+            a.href = url
+            a.download = this.name + '.xls'
+            a.click()
+            a.remove()
+          }
+        })
+      },
       // 上传计划表格的成功回调函数
       isDemand(response, file, fileList) {
-        if (response.code == 0) {
-          this.MessageSuccess(response.msg)
-          vm.planUploadState(1)
+        // console.log(response)
+        if (response.state == SUCCESS_OK) {
+          this.MessageSuccess(response.message)
+          this.showState = false
+          this._mileStonePlanList()
         } else {
-          this.MessageError(response.msg)
-          vm.planUploadState(0)
+          this.MessageError(response.message)
         }
       }
     }

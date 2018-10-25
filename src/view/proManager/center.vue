@@ -22,15 +22,15 @@
           <td class="cow1">岗位</td>
           <td class="cow2 cow2_botton">{{content.position}}</td>
           <td class="cow1">工资卡开户行</td>
-          <td class="cow2 cow2_botton"><span v-if="content.userRoster.accountBank">{{content.userRoster.accountBank}}</span></td>
+          <td class="cow2 cow2_botton"><span>{{content.userRoster.accountBank}}</span></td>
           <td class="cow1">工资卡号</td>
-          <td class="cow2 cow2_botton"><span v-if="content.userRoster.bankAccountNo">{{content.userRoster.bankAccountNo}}</span></td>
+          <td class="cow2 cow2_botton"><span>{{content.userRoster.bankAccountNo}}</span></td>
         </tr>
         <tr>
           <td class="cow1">薪资</td>
           <td class="cow2 cow2_botton">{{content.salaryMonth}}</td>
           <td class="cow1">状态</td>
-          <td class="cow2 cow2_botton">{{content.userStatus.isFree ? '空闲中' : '忙碌中'}}</td>
+          <td class="cow2 cow2_botton"><span v-if="content.userStatus!=null">{{content.userStatus.isFree ? '空闲中' : '忙碌中'}}</span></td>
           <td class="cow1">入职时间</td>
           <td class="cow2 cow2_botton">{{content.hiredDate}}</td>
         </tr>
@@ -98,7 +98,15 @@
         }
       }
       return {
-        content: new Object(),
+        content: {
+          userRoster: {
+            accountBank: '',
+            bankAccountNo: ''
+          },
+          userStatus: {
+            isFree: ''
+          }
+        },
         levelName: '',
         roleShow: false,
         dialogShowState: false,
@@ -138,11 +146,6 @@
             this.MessageError(res.message)
           }
         })
-      },
-      seeDetails() {
-        vm.$router.push({
-          name: 'Assessment'
-        });
       },
       // 修改密码
       submitForm(formName) {

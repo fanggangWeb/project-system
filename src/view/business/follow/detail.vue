@@ -4,21 +4,21 @@
       <router-link to="#">首页&nbsp;></router-link>
       <router-link to="/home/follow">&nbsp;跟进&nbsp;>&nbsp;</router-link>
       <router-link to="#">跟进详情</router-link>
-      <el-date-picker class="timeSearch"
+      <!-- <el-date-picker 
         v-model="searchTime"
         type="datetime"
         value-format="yyyy-MM-dd HH:mm:ss"
         placeholder="跟进时间">
-      </el-date-picker>
-      <el-button style="margin-right:20px" type="success" @click="showState = true">添加</el-button>
+      </el-date-picker> -->
+      <el-button class="timeSearch" style="margin-right:20px" type="success" @click="add">添加</el-button>
     </div>
     <div class="project-table">
       <el-table :header-cell-style="{textAlign: 'center'}"  :data="list" style="width:100%">
         <el-table-column type="index" align="center" label="序号" width="60">
         </el-table-column>
-        <el-table-column prop="time" label="跟进时间" width="180" align="center">
+        <el-table-column prop="createTime" align="center" label="跟进时间" width="180">
         </el-table-column>
-        <el-table-column prop="desc" label="跟进详情">
+        <el-table-column prop="record" align="center" label="跟进详情">
         </el-table-column>
         <el-table-column align="center" label="操作" width="180">
           <template slot-scope="scope">
@@ -37,7 +37,7 @@
     </div>
     <el-dialog :close-on-click-modal="false" :visible.sync="showState" width="50%" center>
       <el-form :model="form" ref="form" :rules="rules" label-width="120px">
-        <el-form-item label="跟进时间" prop="time">
+        <!-- <el-form-item label="跟进时间" prop="time">
           <el-date-picker
             v-model="form.time"
             type="datetime"
@@ -45,9 +45,9 @@
             value-format="yyyy-MM-dd HH:mm:ss"
             placeholder="跟进时间">
           </el-date-picker>
-        </el-form-item>
+        </el-form-item> -->
         <el-form-item label="跟进详情" prop="desc">
-          <el-input type="textarea" v-model="form.desc" placeholder="请输入项目简介"></el-input>
+          <el-input type="textarea" v-model="form.desc" placeholder="请输入跟进详情"></el-input>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
@@ -60,6 +60,8 @@
 
 <script>
   let vm
+  const SUCCESS_OK = '200'
+  import { followDetail, addTaskChedule, editTaskChedule, delTaskChedule } from '@/api/request'
   import { mapGetters, mapMutations } from 'vuex'
   export default {
     data() {
@@ -72,17 +74,24 @@
         totalElements: 10,
         projectName: '',
         showState: false,
+        editStatus: 'add',
+        rowId: '',
         form: {
-          time: '',
+          // time: '',
           desc: ''
         },
         rules: {
           desc:[{required: true, message: '请输入跟进详情', trigger: 'blur'}],
-          time:[{required: true, message: '请选择跟进时间', trigger: 'blur'}],
+          // time:[{required: true, message: '请选择跟进时间', trigger: 'blur'}],
         }
       }
     },
-    mounted() {},
+    mounted() {
+      this._followDetail()
+    },
+    computed: {
+      ...mapGetters(['gettaskId'])
+    },
     watch: {
       showState: function (val, oldval) {
         if (val == false) {
@@ -91,20 +100,95 @@
       }
     },
     methods: {
-      ...mapMutations(['projectId']),
+      _followDetail () { // 业务员跟进列表
+        let data = {
+          page: this.page,
+          size: this.size,
+          saleTaskId: this.gettaskId
+        }
+        followDetail(data).then(res => {
+          res = res.data
+          console.log(res)
+          if (res.state == SUCCESS_OK) {
+            this.totalElements = res.data.total
+            this.list = res.data.rows
+          } else {
+            this.MessageError('连接错误')
+          }
+        })
+      },
+      add () {
+        this.editStatus = 'add'
+        this.form.desc = ''
+        this.showState = true
+      },
       handleCurrentChange() {
         console.log(this.page)
       },
       timeSearch(val) {
-        console.log(val)
+        // console.log(val)
       },
-      edit (item) {},
-      del (item) {},
+      edit (item) {
+        this.rowId = item.id
+        this.editStatus = 'edit'
+        this.form.desc = item.record
+        this.showState = true
+      },
+      del (item) {
+        this.$confirm('此操作将永久删除该条记录, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          delTaskChedule(item.id).then(res => {
+            res = res.data
+            if (res.state == SUCCESS_OK) {
+              this.MessageSuccess(res.message)
+              this._followDetail()
+            } else {
+              this.MessageError(res.message)
+            }
+          })
+        }).catch(() => {
+        })
+      },
       // 提交表单
       submit () {
         this.$refs['form'].validate((valid) => {
           if (valid) {
-            alert('submit!')
+            if (this.editStatus == 'add') {
+              const data = {
+                record: this.form.desc,
+                saleTask: {
+                  id: this.gettaskId
+                }
+              }
+              addTaskChedule(data).then(res => {
+                res = res.data
+                if (res.state == SUCCESS_OK) {
+                  this.showState = false
+                  this.MessageSuccess(res.message)
+                  this._followDetail()
+                } else {
+                  this.MessageError(res.message)
+                }
+              })
+            } else if (this.editStatus == 'edit') {
+              const data = {
+                record: this.form.desc,
+                id: this.rowId
+              }
+              editTaskChedule(data).then(res => {
+                res = res.data
+                if (res.state == SUCCESS_OK) {
+                  this.showState = false
+                  this.MessageSuccess(res.message)
+                  this._followDetail()
+                } else {
+                  this.MessageError(res.message)
+                }
+              })
+            }
           } else {
             console.log('error submit!!');
             return false

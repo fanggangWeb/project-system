@@ -273,6 +273,10 @@ export const mainRoute = {
     name: '项目主管任务',
     component: _import('proSupervisor/task/index')
   }, {
+    path: 'superTaskDetail',
+    name: '项目主管任务详情',
+    component: _import('proSupervisor/task/detail')
+  }, {
     path: 'superProject',
     name: '项目主管项目',
     component: _import('proSupervisor/project/index')
