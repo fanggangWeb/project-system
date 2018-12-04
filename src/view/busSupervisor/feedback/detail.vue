@@ -20,8 +20,17 @@
           <span v-for="(item,index) in projectInfo.salesPersons" :key="index">&nbsp;{{item.name}}</span>
         </div>
       </div>
+      <div class="center">
+        <div class="text">联系电话：{{projectInfo.customer.customerMobile}}</div>
+        <div class="text">客户公司：{{projectInfo.customer.corporationName}}</div>
+        <div class="text">QQ号码：{{projectInfo.customer.qq}}</div>
+        <div class="text">微信号码：{{projectInfo.customer.weixin}}</div>
+        <div class="text">所属区域：{{projectInfo.customer.region}}</div>
+        <div class="text">渠道来源：{{projectInfo.source}}</div>
+        <div class="text">需求编号：{{projectInfo.demandNumber}}</div>
+      </div>
       <div class="bottom">
-        {{projectInfo.demandDesc}}
+        项目简介：{{projectInfo.demandDesc}}
       </div>
     </div>
     <div class="project-table">
@@ -151,6 +160,7 @@
         height: 40px;
         line-height: 40px;
         padding: 0 20px;
+        color: #4d4d4d;
       }
       .name {
         float: left;
@@ -158,6 +168,16 @@
       .customer {
         float: right;
         margin-left: 20px;
+      }
+      .center {
+        background: white;
+        padding: 0 20px;
+        .text {
+          height: 32px;
+          line-height: 32px;
+          display: inline-block;
+          width: 33%;
+        }
       }
       .bottom {
         line-height: 30px;

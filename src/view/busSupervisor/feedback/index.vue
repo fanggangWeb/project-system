@@ -292,7 +292,7 @@
                   customerName: this.form.customer,
                   customerMobile: this.form.telephone,
                   corporationName: this.form.corporationName,
-                  region: this.form.source,
+                  region: this.form.region,
                   qq: this.form.qq,
                   weixin: this.form.weixin
                 },
@@ -319,7 +319,7 @@
                   customerName: this.form.customer,
                   customerMobile: this.form.telephone,
                   corporationName: this.form.corporationName,
-                  region: this.form.source,
+                  region: this.form.region,
                   qq: this.form.qq,
                   weixin: this.form.weixin
                 },
