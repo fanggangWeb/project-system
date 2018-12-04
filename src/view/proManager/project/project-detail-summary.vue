@@ -17,10 +17,14 @@
         </div>
         <div class="detail-row">
           <span class="keyword">项目预算：</span>
-          <span class="value">{{projectBudgetList.amount}}</span>
+          <span v-if="budgetState" class="value">{{projectBudgetList.amount}}</span>
+          <span v-if="!budgetState" class="value">******</span>
+          <i class="el-icon-view"  @click="changeBudgetState"></i>
           <div class="row-right">
             <span class="keyword">项目奖金：</span>
-            <span class="value">{{projectBonusList.amount}}</span>
+            <span v-if="bonusState" class="value">{{projectBonusList.amount}}</span>
+            <span v-if="!bonusState" class="value">******</span>
+            <i class="el-icon-view" @click="changeBonusState"></i>
           </div>
         </div>
         <div class="detail-row">
@@ -70,6 +74,8 @@
             name: ''
           }
         },
+        budgetState: false,
+        bonusState: false,
         projectIntro: {},
         customer: {}
       }
@@ -82,6 +88,12 @@
       this._proProjectDetail()
     },
     methods: {
+      changeBudgetState () {
+        this.budgetState = !this.budgetState
+      },
+      changeBonusState () {
+        this.bonusState = !this.bonusState
+      },
       _proProjectDetail () {
         proProjectDetail({id: this.getprojectId}).then(res => {
           res = res.data

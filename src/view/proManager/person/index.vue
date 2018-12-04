@@ -11,6 +11,9 @@
           <li>
             <router-link to="/home/person/staffSalary">薪资</router-link>
           </li>
+          <!-- <li>
+            <router-link to="/home/person/timeAdd">工作时间补全</router-link>
+          </li> -->
         </ul>
       </div>
       <router-view></router-view>
@@ -67,7 +70,7 @@
         ul li {
           color: #676767;
           display: inline-block;
-          width: 120px;
+          min-width: 120px;
           height: 45px;
           line-height: 45px;
           text-align: center;

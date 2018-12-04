@@ -8,29 +8,33 @@
           </el-input>
           <!-- <a href="" @click.prevent="nameSearch"><i class="el-icon-search"></i></a> -->
         </div>
-        <el-select style="width:130px;margin-left:20px;" @change="departSearch" v-model="departmentId" clearable placeholder="选择部门">
+        <el-select style="width:130px;margin-left:10px;" @change="departSearch" v-model="departmentId" clearable placeholder="选择部门">
           <el-option v-if="item.name" v-for="item in departmentList" :key="item.id" :label="item.name" :value="item.id">
           </el-option>
         </el-select>
-        <el-select style="width:130px;margin-left:20px;" @change="positionSearch" v-model="position" clearable placeholder="岗位筛选">
+        <el-select style="width:130px;margin-left:10px;" @change="positionSearch" v-model="position" clearable placeholder="岗位筛选">
           <el-option v-if="item" v-for="(item,index) in positionList" :key="index" :label="item" :value="item">
           </el-option>
         </el-select>
         <el-date-picker
-          style="margin-left:20px;"
+          style="margin-left:10px;"
           v-model="searchTime"
           type="date"
           value-format="yyyy-MM-dd"
           @change="timeQuery"
           placeholder="入职时间">
         </el-date-picker>
-        <el-button v-if="dingShow" type="info" plain style="margin-left:20px" @click="dingTalk">
+        <el-button v-if="dingShow" type="info" plain style="margin-left:10px" @click="dingTalk">
           同步钉钉
         </el-button>
-        <el-button type="success" style="margin-left:20px" @click="showState = true">
-          导入表格
+        <el-button type="success" style="margin-left:10px" @click="showState = true">
+          导入信息
         </el-button>
-        <el-button type="primary" style="margin-right:20px">导出表格</el-button>
+        <el-button type="primary" @click="exportExcel">导出信息</el-button>
+        <el-button type="success" style="margin-left:10px" @click="visible = true">
+          导入车补
+        </el-button>
+        <el-button type="primary" style="margin-right:20px" @click="_exportAllCar">导出车补</el-button>
       </div>
     </div>
     <div class="project-table">
@@ -67,13 +71,13 @@
       :total="totalElements">
       </el-pagination>
     </div>
-    <el-dialog title="上传人员列表" :close-on-click-modal="false" :visible.sync="showState" width="35%" center>
+    <el-dialog title="上传人员信息" :close-on-click-modal="false" :visible.sync="showState" width="35%" center>
       <el-row style="margin-top:20px">
         <el-col style="text-align:center" :offset="4" :span="8">
-          <el-button type="primary"><a style="color:white" :href="downUrl">下载excel模板</a></el-button>
+          <el-button type="primary" @click="downUserTem"><span style="color:white">下载excel模板</span></el-button>
         </el-col>
         <el-col style="text-align:center" :span="8">
-          <el-upload :action="uploadUrl" :file-list="fileList" :data="dataParams()" :on-success="isDemand" :show-file-list="false">
+          <el-upload :with-credentials='true' :action="this.HTTP+'/userInfo/importUserInfo'" :file-list="fileList" :on-success="isDemand" :show-file-list="false">
             <el-button style="background-color:#45B78D;border-color:none;color:white">上传excel表格
             </el-button>
           </el-upload>
@@ -84,6 +88,23 @@
         <el-button type="primary" @click="showState = false">确 定</el-button>
       </span>
     </el-dialog>
+    <el-dialog title="上传车补信息" :close-on-click-modal="false" :visible.sync="visible" width="35%" center>
+      <el-row style="margin-top:20px">
+        <el-col style="text-align:center" :offset="4" :span="8">
+          <el-button type="primary" @click="downCar"><span style="color:white">下载excel模板</span></el-button>
+        </el-col>
+        <el-col style="text-align:center" :span="8">
+          <el-upload :with-credentials='true' :action="this.HTTP+'/carSubsidy/importFromExcel'" :on-success="isSuccess" :show-file-list="false">
+            <el-button style="background-color:#45B78D;border-color:none;color:white">上传车补excel
+            </el-button>
+          </el-upload>
+        </el-col>
+      </el-row>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="visible = false">取 消</el-button>
+        <el-button type="primary" @click="visible = false">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -91,9 +112,10 @@
   let vm
   const SUCCESS_OK = '200'
   import { mapGetters, mapMutations } from 'vuex'
-  import { groupMemberList, allPosition, allDepartment, delStaff, getAccessToken, importUsers } from '@/api/request'
+  import { groupMemberList, allPosition, allDepartment, delStaff, getAccessToken,
+  importUsers, exportUserInfoTemplate, exportUserInfo, carTemplate, exportAllCar } from '@/api/request'
   export default {
-    data() {
+    data () {
       return {
         followList: [],
         projectStatus: '',
@@ -115,8 +137,8 @@
         },
         showState: false,
         fileList: [], //上传文件列表
-        uploadUrl: this.api + '/projectsPlanNew/uploadFile',
-        downUrl: ''
+        downUrl: '',
+        visible: false
       }
     },
     mounted() {
@@ -131,6 +153,74 @@
       },
       handleError (err, file, fileList){
         this.MessageError('上传附件失败')
+      },
+      isSuccess (response, file, fileList) {
+        if (response.state == SUCCESS_OK) {
+          this.MessageSuccess(response.message)
+          this.visible = false
+          // this._groupMemberList()
+        } else {
+          this.MessageError(response.message)
+        }
+      },
+      // 导出车补的模板
+      _exportAllCar () {
+        exportAllCar().then(res => {
+          if (res.status == SUCCESS_OK) {
+            let a = document.createElement('a')
+            let url = window.URL.createObjectURL(new Blob([res.data]))
+            a.href = url
+            a.download = 'CarSubsidy.xls'
+            a.click()
+            a.remove()
+          } else {
+            this.MessageError(res.message)
+          }
+        })
+      },
+      // 下载车补模板
+      downCar () {
+        carTemplate().then(res => {
+          if (res.status == SUCCESS_OK) {
+            let a = document.createElement('a')
+            let url = window.URL.createObjectURL(new Blob([res.data]))
+            a.href = url
+            a.download = 'CarSubsidyTemplate.xls'
+            a.click()
+            a.remove()
+          } else {
+            this.MessageError(res.message)
+          }
+        })
+      },
+      // 下载模板
+      downUserTem () {
+        exportUserInfoTemplate().then(res => {
+          if (res.status == SUCCESS_OK) {
+            let a = document.createElement('a')
+            let url = window.URL.createObjectURL(new Blob([res.data]))
+            a.href = url
+            a.download = 'UserInfoTemplate.xls'
+            a.click()
+            a.remove()
+          } else {
+            this.MessageError(res.message)
+          }
+        })
+      },
+      exportExcel () {
+        exportUserInfo().then(res => {
+          if (res.status == SUCCESS_OK) {
+            let a = document.createElement('a')
+            let url = window.URL.createObjectURL(new Blob([res.data]))
+            a.href = url
+            a.download = 'UserInfo.xls'
+            a.click()
+            a.remove()
+          } else {
+            this.MessageError(res.message)
+          }
+        })
       },
       // 同步钉钉数据
       dingTalk () {
@@ -205,7 +295,7 @@
         })
       },
       detailGo (item) {
-        // this.staffId(item.id)
+        this.staffId(item.id)
         this.$router.push({path: '/home/perPersonDetail'})
       },
       del (item) {
@@ -255,12 +345,12 @@
       },
       // 上传计划表格的成功回调函数
       isDemand(response, file, fileList) {
-        if (response.code == 0) {
-          this.MessageSuccess(response.msg)
-          vm.planUploadState(1)
+        if (response.state == SUCCESS_OK) {
+          this.MessageSuccess(response.message)
+          this.showState = false
+          this._groupMemberList()
         } else {
-          this.MessageError(response.msg)
-          vm.planUploadState(0)
+          this.MessageError(response.message)
         }
       },
       // 获取下载模板

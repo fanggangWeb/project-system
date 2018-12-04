@@ -42,6 +42,8 @@
         </el-table-column>
         <el-table-column prop="cheduleCount" align="center" label="跟进次数">
         </el-table-column>
+        <el-table-column prop="saleTaskStatusType.name" align="center" label="状态">
+        </el-table-column>
         <el-table-column prop="createTime" align="center" label="创建时间">
         </el-table-column>
         <el-table-column align="center" label="操作">
@@ -93,7 +95,7 @@
   let vm
   const SUCCESS_OK = '200'
   import { mapGetters, mapMutations } from 'vuex'
-  import { salesFollowList, updateTaskStatus, delTaskChedule } from '@/api/request'
+  import { followLists, updateTaskStatus, delTaskChedule } from '@/api/request'
   export default {
     data() {
       return {
@@ -107,6 +109,7 @@
         totalElements: 10,
         projectName: '',
         showState: false,
+        saveId: '',
         statusList: [
           {
             "id": 1,
@@ -180,7 +183,7 @@
           size: this.size,
           registrationTime: this.searchTime
         }
-        salesFollowList(data).then(res => {
+        followLists(data).then(res => {
           res = res.data
           console.log(res)
           if (res.state == SUCCESS_OK) {
@@ -193,7 +196,7 @@
       },
       complete (item) {
         this.showState = true
-        this.taskId = item.id
+        this.saveId = item.id
       },
       timeQuery () {
         this.page = 1
@@ -227,7 +230,7 @@
         this.$refs['form'].validate((valid) => {
           if (valid) {
             let data = {
-              taskId: this.taskId,
+              taskId: this.saveId,
               statusTypeId: this.form.statusTypeId
             }
             updateTaskStatus(data).then(res => {

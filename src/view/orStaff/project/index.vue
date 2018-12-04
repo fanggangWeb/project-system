@@ -4,13 +4,13 @@
       首页 > 项目
       <div class="searchContent">
         <div class="searchProject">
-          <el-input placeholder="项目名称" v-model="projectName" clearable>
+          <el-input placeholder="项目名称" v-model="projectName" @change="nameSearch" clearable>
           </el-input>
-          <a href="" @click.prevent="nameSearch"><i class="el-icon-search"></i></a>
+          <!-- <a href="" @click.prevent="nameSearch"><i class="el-icon-search"></i></a> -->
         </div>
         <div class="selectChoose">
-          <el-select v-model="projectStatus" clearable placeholder="目前状态">
-            <el-option v-for="item in options12" :key="item.value" :label="item.label" :value="item.value">
+          <el-select v-model="status" @change="nameSearch" clearable placeholder="目前状态">
+            <el-option v-for="item in options12" :key="item.id" :label="item.text" :value="item.id">
             </el-option>
           </el-select>
         </div>
@@ -21,13 +21,13 @@
       <el-table :header-cell-style="{background:'#FAFAFA',textAlign: 'center'}"  :data="projectsList" :stripe="true" style="width: 100%">
         <el-table-column type="index" align="center" label="序号" width="60">
         </el-table-column>
-        <el-table-column prop="name" label="项目名称" style="width: 20%">
+        <el-table-column prop="projectBaseInfo.name" align="center" label="名称" style="width: 20%">
         </el-table-column>
-        <el-table-column prop="startTime" align="center" label="开始时间" style="width: 20%">
+        <el-table-column prop="projectBaseInfo.startTime" align="center" label="开始时间" style="width: 20%">
         </el-table-column>
-        <el-table-column prop="endTime" align="center" label="结束时间" style="width: 20%">
+        <el-table-column prop="projectBaseInfo.endTime" align="center" label="结束时间" style="width: 20%">
         </el-table-column>
-        <el-table-column prop="endTime" align="center" label="目前状态" style="width: 20%">
+        <el-table-column prop="projectStatus.text" align="center" label="状态" style="width: 20%">
         </el-table-column>
         <el-table-column align="center" label="操作">
           <template slot-scope="scope">
@@ -49,58 +49,70 @@
 <script>
   let vm
   import { mapGetters, mapMutations } from 'vuex'
+  import { projectStatus, staffProject } from '@/api/request'
+  const SUCCESS_OK = '200'
   export default {
     data() {
       return {
-        options12: [{
-          value: 'CONDUCTING',
-          label: '进行中'
-        }, {
-          value: 'FINISH',
-          label: '已完成'
-        }, {
-          value: 'NOT_FINISH',
-          label: '未完成'
-        }, {
-          value: 'STOPPING',
-          label: '暂停'
-        }, {
-          value: 'AUDITING',
-          label: '审查中'
-        }],
-        projectStatus: null,
-        options: [{
-          value: 'CONDUCTING',
-          label: '进行中'
-        }, {
-          value: 'FINISH',
-          label: '已完成'
-        }, {
-          value: 'NOT_FINISH',
-          label: '未完成'
-        }],
+        options12: [],
+        status: '',
         page: 1,
         size: 10,
-        projectsList: [1,2],
-        status: {},
-        totalElements: 10,
+        projectsList: [],
+        totalElements: 0,
         projectName: ''
       }
     },
     watch: {},
-    mounted() {},
+    mounted () {
+      this._staffProject()
+      this._projectStatus()
+    },
     methods: {
       ...mapMutations(['projectId']),
       detailGo (item) {
-        this.projectId(item)
+        this.projectId(item.id)
         this.$router.push({path: '/home/orProjectDetail/'})
       },
-      nameSearch () {},
+      _projectStatus() {
+        projectStatus().then(res => {
+          res = res.data
+          if (res.state = SUCCESS_OK) {
+            this.options12 = res.data
+          } else {
+            this.MessageError(res.message)
+          }
+        })
+      },
+      // 获取项目列表
+      _staffProject () {
+        const data = {
+          page: this.page,
+          size: this.size,
+          name: this.projectName,
+          status: this.status
+        }
+        staffProject(data).then(res => {
+          res = res.data
+          // console.log(res.data)
+          if (res.state == SUCCESS_OK) {
+            this.projectsList = res.data.rows
+            this.totalElements = res.data.total
+            // console.log(this.projectsList)
+          } else {
+            this.MessageError(res.message)
+          }
+        })
+      },
+      nameSearch () {
+        this.page = 1
+        this._staffProject()
+      },
       jump (data) {
         this.$router.push(data)
       },
       handleCurrentChange() {
-        console.log(this.page)
+        this._staffProject()
       }
     }
   }

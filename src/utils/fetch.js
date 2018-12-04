@@ -31,7 +31,7 @@ function endLoading() {
 
 instance.interceptors.request.use(config => { // 添加一个请求拦截器
   if (config.load) { startLoading() }
-  //   config.headers['token'] = store.getters.token // 如果要附加请求头
+  //   config.headers['token'] = store.getters.token // 附加请求头
   return config
 }, error => {
   console.log(error)
@@ -40,12 +40,22 @@ instance.interceptors.request.use(config => { // 添加一个请求拦截器
 
 instance.interceptors.response.use(res => { // 添加一个返回拦截器
   if (loading) { endLoading() }
+  if (res.data.state === 401) {
+    MessageError('未授权，请重新登录')
+    store.dispatch('FedLogout')
+    setTimeout(() => {
+      router.push('/')
+    }, 1500)
+  }
   return res
 }, error => {
   if (loading) { endLoading() }
   // alert(JSON.stringify(error))
-  const code = error.response.data.state
-  const message = error.response.data.message
+  let code, message
+  if (error.response) {
+    code = error.response.data.state
+    message = error.response.data.message
+  }
   if (code) {
     switch (code) {
       case 400:

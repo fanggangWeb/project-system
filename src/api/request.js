@@ -12,11 +12,9 @@ export function login (data) {
   })
 }
 // 登陆以后获取人员信息
-export function userInfo (data) {
-  data = qs.stringify(data)
+export function userInfo () {
   return fetch({
     url: `${HTTP}/userInfo/findUserInfo`,
-    data,
     method: 'get',
     load: true
   })
@@ -127,7 +125,7 @@ export function importUsers (data) {
     method: 'get'
   })
 }
-// 业务员跟进列表
+// 业务员跟进列表 商务主管反馈列表
 export function salesFollowList (data) {
   data = qs.stringify(data)
   return fetch({
@@ -404,6 +402,15 @@ export function statistics (data) {
     load: true
   })
 }
+// 项目经理统计获取全部人员成本
+export function memberCostList (data) {
+  data = qs.stringify(data)
+  return fetch({
+    url: `${HTTP}/project/statistics/memberCostList`,
+    data,
+    method: 'post'
+  })
+}
 // 项目经理资料文件获取全部
 export function getProAllFile (data) {
   data = qs.stringify(data)
@@ -483,6 +490,530 @@ export function delProto (data) {
     url: `${HTTP}/project/file/deletePrototypeLink`,
     params: data,
     method: 'get',
+    load: true
+  })
+}
+// 项目经理 反馈
+export function getFeedBack (data) {
+  data = qs.stringify(data)
+  return fetch({
+    url: `${HTTP}/project/feedback/getFeedbackById`,
+    data,
+    method: 'post',
+    load: true
+  })
+}
+// 项目经理 反馈
+export function getFeedBackInfo (data) {
+  data = qs.stringify(data)
+  return fetch({
+    url: `${HTTP}/project/feedback/getFeedbackInfoById`,
+    data,
+    method: 'post',
+    load: true
+  })
+}
+// 项目经理 新增需求变更
+export function addDemandChange (data) {
+  return fetch({
+    url: `${HTTP}/project/demand/change/insert`,
+    data,
+    method: 'post',
+    load: true
+  })
+}
+// 根据项目主键查询，获取需求变更列表
+export function demandList (data) {
+  data = qs.stringify(data)
+  return fetch({
+    url: `${HTTP}/project/demand/change/findByProjectId`,
+    data,
+    method: 'post',
+    load: true
+  })
+}
+// 项目经理 修改需求变更
+export function editDemandChange (data) {
+  return fetch({
+    url: `${HTTP}/project/demand/change/update`,
+    data,
+    method: 'post',
+    load: true
+  })
+}
+// 删除需求变更
+export function deldemand (data) {
+  data = qs.stringify(data)
+  return fetch({
+    url: `${HTTP}/project/demand/change/delete`,
+    data,
+    method: 'post',
+    load: true
+  })
+}
+// 项目经理月评评分
+export function managerScore (data) {
+  return fetch({
+    url: `${HTTP}/grade/managerInsert`,
+    params: data,
+    method: 'get',
+    load: true
+  })
+}
+// 获取考勤记录
+export function attendanceInfo (data) {
+  return fetch({
+    url: `${HTTP}/userInfo/findAttendanceById`,
+    params: data,
+    method: 'get'
+  })
+}
+// 人员详情 个人详情
+export function staffUserInfo (data) {
+  return fetch({
+    url: `${HTTP}/userInfo/findOne`,
+    params: data,
+    method: 'get',
+    load: true
+  })
+}
+// 查询人员下所有的任务
+export function staffDaildyTask (data) {
+  data = qs.stringify(data)
+  return fetch({
+    url: `${HTTP}/projectDailyTask/findAllByPrincipalId`,
+    data,
+    method: 'post'
+  })
+}
+// 查询本部门员工排除领导,不分页
+export function groupMemberNoPage () {
+  return fetch({
+    url: `${HTTP}/userInfo/findAllUserInfoByDepartmentManagerNotPage`,
+    method: 'get',
+    load: true
+  })
+}
+// 项目经理提交每个月的薪资比
+export function insertSalary (data) {
+  return fetch({
+    url: `${HTTP}/performance/insertBatch`,
+    method: 'post',
+    data,
+    load: true
+  })
+}
+// 项目经理查询任务
+export function dayTaskList (data) {
+  data = qs.stringify(data)
+  return fetch({
+    url: `${HTTP}/projectDailyTask/findAllByProjectManager`,
+    method: 'post',
+    data,
+    load: true
+  })
+}
+// 项目经理审核日任务未通过
+export function refuseDayTask (data) {
+  return fetch({
+    url: `${HTTP}/projectDailyTask/notFinished`,
+    method: 'get',
+    params: data,
+    load: true
+  })
+}
+// 普通组员月互评
+export function memberScore (data) {
+  return fetch({
+    url: `${HTTP}/grade/memberInsert`,
+    method: 'get',
+    params: data,
+    load: true
+  })
+}
+// 开发人员获取项目任务列表
+export function staffTask (data) {
+  data = qs.stringify(data)
+  return fetch({
+    url: `${HTTP}/project/plan/findByDeveloper`,
+    method: 'post',
+    data,
+    load: true
+  })
+}
+// 开发人员获取项目列表
+export function staffProject (data) {
+  data = qs.stringify(data)
+  return fetch({
+    url: `${HTTP}/project/findByDeveloper`,
+    method: 'post',
+    data,
+    load: true
+  })
+}
+// 领取日任务
+export function receiveTask (data) {
+  data = qs.stringify(data)
+  return fetch({
+    url: `${HTTP}/projectDailyTask/insert`,
+    method: 'post',
+    data,
+    load: true
+  })
+}
+// 获取项目状态列表
+export function projectStatus () {
+  return fetch({
+    url: `${HTTP}/project/findProjectStatusList`,
+    method: 'post'
+  })
+}
+// 开发人员 完成情况 是获取外面的日历表
+export function getCompleteDate () {
+  return fetch({
+    url: `${HTTP}/projectDailyTask/getDailyTaskFeedBackStatistics`,
+    method: 'get',
+    load: true
+  })
+}
+// 普通人员 完成情况 获取日历详情
+export function getCompleteInfo (data) {
+  return fetch({
+    url: `${HTTP}/projectDailyTask/getDailyTaskFeedBackStatisticsInfo`,
+    method: 'get',
+    params: data,
+    load: true
+  })
+}
+// 开发人员提交任务
+export function commitTask (data) {
+  return fetch({
+    url: `${HTTP}/projectDailyTask/commit`,
+    method: 'get',
+    params: data,
+    load: true
+  })
+}
+// 根据项目查询自己的日任务统计
+export function taskSatistics (data) {
+  return fetch({
+    url: `${HTTP}/projectDailyTask/getDailyTaskStatisticsByProjectIdAndPrincipal`,
+    method: 'get',
+    params: data,
+    load: true
+  })
+}
+// 商务主管修改
+export function taskUpdate (data) {
+  return fetch({
+    url: `${HTTP}/saleTask/update`,
+    method: 'post',
+    data,
+    load: true
+  })
+}
+// 业务经理和业务员根据主键查询任务详情
+export function saleTaskDetail (data) {
+  return fetch({
+    url: `${HTTP}/saleTask/findOne`,
+    method: 'get',
+    params: data,
+    load: true
+  })
+}
+// 商务主管 项目进度条件分页查询
+export function saleTaskDetailList (data) {
+  data = qs.stringify(data)
+  return fetch({
+    url: `${HTTP}/saleTaskChedule/pageQuery`,
+    method: 'post',
+    data,
+    load: true
+  })
+}
+// 添加销售奖金
+export function addSaleBonus (data) {
+  data = qs.stringify(data)
+  return fetch({
+    url: `${HTTP}/saleTask/addSaleBonus`,
+    method: 'post',
+    data,
+    load: true
+  })
+}
+// 业务员销售 个人中心数据统计
+export function businessStatics (data) {
+  return fetch({
+    url: `${HTTP}/saleTask/getStatistics`,
+    method: 'get',
+    params: data,
+    load: true
+  })
+}
+// 获取所有的项目 设计主管用
+export function allProject (data) {
+  data = qs.stringify(data)
+  return fetch({
+    url: `${HTTP}/project/pageQuery`,
+    method: 'post',
+    data,
+    load: true
+  })
+}
+// 查询所有设计人员
+export function allDesigner () {
+  return fetch({
+    url: `${HTTP}/userInfo/findAllDesigner`,
+    method: 'get'
+  })
+}
+// 根据项目新增设计师
+export function insertDesigner (data) {
+  data = qs.stringify(data)
+  return fetch({
+    url: `${HTTP}/project/designer/insertDesigner`,
+    method: 'post',
+    data,
+    load: true
+  })
+}
+// 设计师个人详情 项目列表
+export function designDetailList (data) {
+  data = qs.stringify(data)
+  return fetch({
+    url: `${HTTP}/project/findProjectByDesignerId`,
+    method: 'post',
+    data,
+    load: true
+  })
+}
+// 开发人员个人任务的统计 个人详情用
+export function orTaskStatistisc (data) {
+  data = qs.stringify(data)
+  return fetch({
+    url: `${HTTP}/projectDailyTask/statisticsByPrincipalId`,
+    method: 'post',
+    data,
+    load: true
+  })
+}
+// 人事主管 导入的模板
+export function exportUserInfoTemplate () {
+  return fetch({
+    url: `${HTTP}/userInfo/exportUserInfoTemplate`,
+    method: 'get',
+    responseType: 'blob'
+  })
+}
+// 导出人员信息的表格
+export function exportUserInfo () {
+  return fetch({
+    url: `${HTTP}/userInfo/exportUserInfo`,
+    method: 'get',
+    responseType: 'blob'
+  })
+}
+// 项目主管改变项目状态 项目完结
+export function finishProject (data) {
+  return fetch({
+    url: `${HTTP}/project/finished`,
+    params: data,
+    method: 'get',
+    load: true
+  })
+}
+// 项目主管改变项目状态 项目交付
+export function deliveryProject (data) {
+  return fetch({
+    url: `${HTTP}/project/delivery`,
+    params: data,
+    method: 'get',
+    load: true
+  })
+}
+// 动态条件分页查询
+export function dynamicList (data) {
+  data = qs.stringify(data)
+  return fetch({
+    url: `${HTTP}/advice/pageQueryByReceiver`,
+    data,
+    method: 'post',
+    load: true
+  })
+}
+// 动态详情查询 根据主键查询
+export function adviceDetail (data) {
+  return fetch({
+    url: `${HTTP}/advice/findOne`,
+    params: data,
+    method: 'get',
+    load: true
+  })
+}
+// 获取公司所有人员
+export function findAllStaff () {
+  return fetch({
+    url: `${HTTP}/userInfo/findAllNameAndId`,
+    method: 'get'
+  })
+}
+// 动态 发布动态 新增
+export function insertAdvice (data) {
+  return fetch({
+    url: `${HTTP}/advice/insert`,
+    data,
+    method: 'post',
+    load: true
+  })
+}
+// 项目主管给中级和高级工程师评分
+export function chargeScore (data) {
+  return fetch({
+    url: `${HTTP}/grade/chargeInsert`,
+    params: data,
+    method: 'get',
+    load: true
+  })
+}
+// 查询人员等级列表
+export function userLevel (data) {
+  return fetch({
+    url: `${HTTP}/userLevel/findAll`,
+    params: data,
+    method: 'get'
+  })
+}
+// 获取项目结算
+export function projectResult (data) {
+  data = qs.stringify(data)
+  return fetch({
+    url: `${HTTP}/projectResult/findOne`,
+    data,
+    method: 'post',
+    load: true
+  })
+}
+// 导出车补模板
+export function carTemplate () {
+  return fetch({
+    url: `${HTTP}/carSubsidy/exportTemplate`,
+    method: 'get',
+    responseType: 'blob'
+  })
+}
+// 导出车补的表格
+export function exportAllCar () {
+  return fetch({
+    url: `${HTTP}/carSubsidy/exportFromExcel`,
+    method: 'get',
+    responseType: 'blob'
+  })
+}
+// 销售跟进的接口
+export function followLists (data) {
+  data = qs.stringify(data)
+  return fetch({
+    url: `${HTTP}/saleTask/pageQueryBySeller`,
+    data,
+    method: 'post',
+    load: true
+  })
+}
+// 开发人员任务获取根据项目获取自己的所有任务的业务 模块 功能名称
+export function orStaffSelectList (data) {
+  return fetch({
+    url: `${HTTP}/project/plan/getPlanSelectList`,
+    params: data,
+    method: 'get'
+  })
+}
+// 项目经理新增计划
+export function insertPlan (data) {
+  return fetch({
+    url: `${HTTP}/project/plan/insert`,
+    data,
+    method: 'post'
+  })
+}
+// 项目经理修改计划
+export function projectUpdatePlan (data) {
+  return fetch({
+    url: `${HTTP}/project/plan/update`,
+    data,
+    method: 'post'
+  })
+}
+// 普通开发人员手动提交升级
+export function orStaffUpdate () {
+  return fetch({
+    url: `${HTTP}/userSalaryRecord/apply`,
+    method: 'get',
+    load: true
+  })
+}
+// 项目主管的 升级审批列表
+export function approvalList (data) {
+  return fetch({
+    url: `${HTTP}/userSalaryRecord/pageQuery`,
+    method: 'get',
+    params: data,
+    load: true
+  })
+}
+// 项目主管的 升级审批列表
+export function toApproval (data) {
+  return fetch({
+    url: `${HTTP}/userSalaryRecord/review`,
+    method: 'get',
+    params: data,
+    load: true
+  })
+}
+// 项目经理工作补全列表
+export function timeCompletion (page, size) {
+  // data = qs.stringify(data)
+  return fetch({
+    url: `${HTTP}/projectWorkingTimeCompletion/pageQuery?page=${page}&size=${size}`,
+    // data,
+    method: 'post',
+    load: true
+  })
+}
+// 根据日期查询所有日任务不合格列表，并计算考核金额
+export function noCompleteTask (data) {
+  data = qs.stringify(data)
+  return fetch({
+    url: `${HTTP}/projectDailyTask/examine`,
+    data,
+    method: 'post',
+    load: true
+  })
+}
+// 根据日期查询所有日任务不合格列表导出成excel表格
+export function exportNoCompleteTask (data) {
+  data = qs.stringify(data)
+  return fetch({
+    url: `${HTTP}/projectDailyTask/examine/excl/export`,
+    data,
+    method: 'post',
+    responseType: 'blob',
+    load: true
+  })
+}
+// 所有的项目状态的列表
+export function allProjectStatusList () {
+  return fetch({
+    url: `${HTTP}/project/findProjectStatusList`,
+    method: 'post'
+  })
+}
+// 项目经理更改项目的状态
+export function changeProjectStatus (data) {
+  data = qs.stringify(data)
+  return fetch({
+    url: `${HTTP}/project/suspend`,
+    method: 'post',
+    data,
     load: true
   })
 }

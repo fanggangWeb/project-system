@@ -59,10 +59,14 @@
           </div>
           <div class="detail-row">
             <span class="keyword">项目预算：</span>
-            <span class="value">{{managerTaskBudgets.amount}}</span>
+            <span v-if="budgetState" class="value">{{managerTaskBudgets.amount}}</span>
+            <span v-if="!budgetState" class="value">******</span>
+            <i class="el-icon-view"  @click="changeBudgetState"></i>
             <div class="row-right">
               <span class="keyword">项目奖金：</span>
-              <span class="value">{{managerTaskBonus.amount}}</span>
+              <span v-if="bonusState" class="value">{{managerTaskBonus.amount}}</span>
+              <span v-if="!bonusState" class="value">******</span>
+              <i class="el-icon-view" @click="changeBonusState"></i>
             </div>
           </div>
           <div class="detail-row">
@@ -115,6 +119,8 @@
         functionDetailList: [],
         totalElements: '',
         taskList: [],
+        budgetState: false,
+        bonusState: false,
         managerTaskBaseInfo: {
           name: '',
           startTime: '',
@@ -146,6 +152,12 @@
       this._proTaskList()
     },
     methods: {
+      changeBudgetState () {
+        this.budgetState = !this.budgetState
+      },
+      changeBonusState () {
+        this.bonusState = !this.bonusState
+      },
       timeQuery () {
         // console.log(this.timeValue)
         if (this.timeValue == null) {
@@ -238,7 +250,9 @@
             this.managerTaskBudgets = res.data.managerTaskBudgets.pop()
             this.managerTaskBonus = res.data.managerTaskBonus.pop()
             this.customer = res.data.customer
-            this.managerTaskFiles.fileList = res.data.managerTaskFiles.fileList
+            if (res.data.managerTaskFiles != null) {
+              this.managerTaskFiles.fileList = res.data.managerTaskFiles.fileList
+            }
           } else {
             this.MessageError(res.message)
           }
@@ -257,6 +271,9 @@
   }
 </script>
 <style lang="less" scoped>
+  i {
+    cursor: pointer;
+  }
   .container {
     width: 100%;
     height: 100%;

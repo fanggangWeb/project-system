@@ -14,7 +14,7 @@
     <!-- 今天 -->
     <div v-if="today.length > 0" class="company-content">
       <div class="content-title">
-        今天
+        未读通知
         <span>({{today.length}})</span>
       </div>
       <div class="content-body">
@@ -32,59 +32,7 @@
               </div>
             </td>
             <!-- <td class="company-col-4">今天{{item.createTime | showDate}}</td> -->
-            <td class="company-col-4">今天{{item.createTime}}</td>            
-          </tr>
-        </table>
-      </div>
-    </div>
-    <!-- 昨天 -->
-    <div v-if="yesterday.length > 0" class="company-content">
-      <div class="content-title">
-        昨天
-        <span>({{yesterday.length}})</span>
-      </div>
-      <div class="content-body">
-        <table>
-          <tr v-for="(item,index) in yesterday" :key="index">
-            <td class="company-col-1">
-              <!-- <img src="../../../assets/xiaoxi1.png" v-if="item.whetherToRead === 'NO_READ'">
-              <img src="../../../assets/xiaoxi2.png" v-if="item.whetherToRead === 'YES_READ'"> -->
-              <img src="../../../assets/xiaoxi1.png">
-            </td>
-            <td class="company-col-2">发送人:{{item.dispatcherName}}</td>
-            <td class="company-col-3" @click="jump('/home/dynamic/detail', item)">
-              <div class="div1">
-                {{item.content}}
-              </div>
-            </td>
-            <!-- <td class="company-col-4">昨天{{item.createTime | showDate}}</td> -->
-            <td class="company-col-4">昨天{{item.createTime}}</td>
-          </tr>
-        </table>
-      </div>
-    </div>
-    <!-- 更早以前 -->
-    <div v-if="beforeYesterday.length > 0" class="company-content">
-      <div class="content-title">
-        更早以前
-        <span>({{beforeYesterday.length}})</span>
-      </div>
-      <div class="content-body">
-        <table>
-          <tr v-for="(item,index) in beforeYesterday" :key="index">
-            <td class="company-col-1">
-              <!-- <img src="../../../../assets/xiaoxi1.png" v-if="item.whetherToRead === 'NO_READ'">
-              <img src="../../../../assets/xiaoxi2.png" v-if="item.whetherToRead === 'YES_READ'"> -->
-              <img src="../../../assets/xiaoxi1.png">
-            </td>
-            <td class="company-col-2">发送人:{{item.dispatcherName}}</td>
-            <td class="company-col-3" @click="jump('/home/dynamic/detail', item)">
-              <div class="div1">
-                {{item.title}}
-              </div>
-            </td>
-            <!-- <td class="company-col-4">{{item.createTime | showDate}}</td> -->
-            <td class="company-col-4">{{item.createTime}}</td>
+            <td class="company-col-4">{{item.createTime}}</td>            
           </tr>
         </table>
       </div>

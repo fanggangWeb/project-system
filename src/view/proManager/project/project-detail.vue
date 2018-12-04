@@ -43,7 +43,7 @@
           <el-button type="primary"><a style="color:white" :href="downUrl">下载计划excel模板</a></el-button>
         </el-col>
         <el-col :span="6">
-          <el-upload :action="uploadUrl" :file-list="fileList" :data="dataParams()" :on-success="isDemand" :show-file-list="false">
+          <el-upload :with-credentials='true' :action="uploadUrl" :file-list="fileList" :data="dataParams()" :on-success="isDemand" :show-file-list="false">
             <el-button style="background-color:#45B78D;border-color:none;color:white">上传计划列表
             </el-button>
           </el-upload>

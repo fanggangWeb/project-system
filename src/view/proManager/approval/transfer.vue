@@ -1,12 +1,14 @@
 <template>
   <div class="second-container">
     <div class="project-table">
-      <el-table :header-cell-style="{background:'#FAFAFA',textAlign: 'center'}"  :data="taskList" :stripe="true" style="width: 100%">
+      <el-table :header-cell-style="{background:'#FAFAFA',textAlign: 'center'}"  :data="staffList" :stripe="true" style="width: 100%">
         <el-table-column type="index" align="center" label="序号" width="60">
         </el-table-column>
         <el-table-column prop="name" label="人员">
         </el-table-column>
-        <el-table-column prop="time" label="时间">
+        <el-table-column prop="time" label="申请时间">
+        </el-table-column>
+        <el-table-column prop="man" label="借调人">
         </el-table-column>
         <el-table-column prop="state" label="计划状态">
         </el-table-column>
@@ -19,9 +21,9 @@
     </div>
     <div class="project-paging">
       <el-pagination background layout="prev, pager, next" 
-      :page-size="size" @current-change="handleCurrentChange"
-      :current-page.sync="page"
-      :total="totalElements">
+        :page-size="size" @current-change="handleCurrentChange"
+        :current-page.sync="page"
+        :total="totalElements">
       </el-pagination>
     </div>
   </div>
@@ -30,13 +32,12 @@
   let vm
   import { mapGetters, mapMutations } from 'vuex'
   export default {
-    name: "projectDetails",
     data() {
       return {
-        taskList: [1,2], // 人员列表
+        staffList: [], // 人员列表
         page: 1,
         size: 10,
-        totalElements: 10
+        totalElements: 0
       }
     },
     computed: {
@@ -46,30 +47,21 @@
     },
     mounted() {
       vm = this
-      console.log(this.$route)
     },
     methods: {
       ...mapMutations([]),
       searchByJob() {
         vm.selectPerson(vm.personId)
       },
-      handleCurrentChange() {
-        console.log(this.page)
-      },
-      // 获取下载模板
-      downTem() {
-      },
+      handleCurrentChange() {},
       dataParams() {
         return {
           projectsId: this.getprojectId
         }
       },
-      detailGo (item) {
-        this.$router.push('')
-      },
+      detailGo (item) {},
     },
-    destroyed() {
-    }
+    destroyed() {}
   }
 </script>
 

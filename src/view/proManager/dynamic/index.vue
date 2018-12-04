@@ -16,26 +16,93 @@
         <div class="navigation-body">
           <div class="dynamic-search">
             <i class="el-icon-search"></i>
-            <input type="text" v-model="search.title" placeholder="搜索动态"/>
+            <input type="text" @change="subSearch" v-model="searchName" placeholder="搜索动态"/>
           </div>
           <div class="line"></div>
           <div class="catalog">
             <ul>
-              <li>
-                <router-link to="/home/dynamic" exact>公司动态</router-link>
-              </li>
-              <li>
-                <router-link to="/home/dynamic/project">项目动态</router-link>
-              </li>
-              <li>
-                <router-link to="/home/dynamic/staff">人员动态</router-link>
+              <li v-for="(item,index) in tabList" :key="item.value" @click="changeTab(item,index)">
+                <span :class="{active:index == currentSelect}">{{item.name}}</span>
               </li>
             </ul>
           </div>
         </div>
       </div>
       <div class="content-display pull-left">
-        <router-view></router-view>
+        <div v-if="showState" class="CompanyIndex">
+          <div class="header">
+            <div class="header-title pull-left">
+              {{typeName}}
+              <span>(共{{total}}条动态,
+                <span style="color:#45B78D">未读&nbsp;</span>{{noRead}}
+                )</span>
+            </div>
+            <!-- <div class="header-pag pull-right">
+              <el-pagination background layout="prev, next" :current-page="page" :total="total" :page-size="size" prev-text="上一页" next-text="下一页" @current-change="handleCurrentChange">
+              </el-pagination>
+            </div>
+            <span class="showNum">{{page}}/{{total === 0 ? 1 : total}}</span> -->
+          </div>
+          <!-- 今天 -->
+          <div v-if="adviceList.length > 0" class="company-content">
+            <div class="content-title">
+              未读通知
+              <span>({{noRead}})</span>
+            </div>
+            <div class="content-body">
+              <table>
+                <tr v-for="(item, index) in adviceList" :key="index">
+                  <td class="company-col-1">
+                    <img src="../../../assets/xiaoxi1.png" v-if="item.status == 0">
+                    <img src="../../../assets/xiaoxi2.png" v-if="item.status == 1">
+                    <!-- <img src="../../../assets/xiaoxi1.png"> -->
+                  </td>
+                  <td class="company-col-2">发送人:{{item.publisher.name}}</td>
+                  <td class="company-col-3" @click="detail(item)">
+                    <div class="div1">
+                      {{item.title}}
+                    </div>
+                  </td>
+                  <!-- <td class="company-col-4">今天{{item.createTime | showDate}}</td> -->
+                  <td class="company-col-4">{{item.createTime}}</td>            
+                </tr>
+              </table>
+            </div>
+          </div>
+          <!-- 分页 -->
+          <div class="company-pag">
+            <el-pagination background layout="prev, pager, next" :current-page.sync="page" :total="total" :page-size="size" @current-change="handleCurrentChange">
+            </el-pagination>
+          </div>
+        </div>
+        <div v-if="!showState" class="index">
+          <div class="head">{{typeName}}
+            <el-button type="info" size="small" style="margin-left:20px;" @click="back">返回</el-button>
+            <!-- <span>
+              <a href="#" style="padding-right: 17px" @click.prevent="prev" v-if="isFirst>0">
+                上一条
+              </a>
+              <a href="#"  @click.prevent="next" v-if="isLast>0">下一条</a>
+            </span> -->
+          </div>
+          <div class="content">
+            <div class="title-con">
+              <a class="title">{{adviceInfo.title}}</a>
+              <span><a style="padding-right: 50px">发送人：{{adviceInfo.publisher.name}}</a><a>发送时间：{{adviceInfo.createTime}}</a></span>
+            </div>
+            <hr style="margin-top: 5px;border: 1px rgba(237,237,237,1) solid" />
+            <div class="text">{{adviceInfo.body}}</div>
+            <hr style="margin-top: 5px;border: 1px rgba(237,237,237,1) solid" />
+          </div>
+          <div class="foot">
+            <!-- <span v-if="nextStatus !== '没有下一条了'" @click="next()">下一条{{nextStatus | readStatus}}：{{nextTitle}}</span>
+            <span v-if="nextStatus === '没有下一条了'">下一条:{{nextStatus}}</span>
+            <span>
+                <a href="" style="padding-right: 17px" @click.prevent="prev" v-if="isFirst>0">上一条</a>
+                <a  href=""  @click.prevent="next"  v-if="isLast>0">下一条</a>
+              </span> -->
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -43,21 +110,28 @@
 
 <script>
   import { mapGetters, mapMutations } from 'vuex'
+  import { dynamicList, adviceDetail } from '@/api/request'
+  const SUCCESS_OK = '200'
   let vm
   export default {
     data() {
       return {
-        currentSelect: 1,
+        currentSelect: 0,
         // listOrDetail: sessionStorage['listOrDetail'],
         noRead: 0,
-        timeValue: '',
-        search: {
-          trendsType: '',
-          size: 10,
-          date: '',
-          title: '',
-          page: 1
-        }
+        timeValue: [],
+        timeSearch: [],
+        searchName: '',
+        typeName: '项目动态',
+        typeValue: 1,
+        adviceList: [],
+        saveId: '',
+        showState: true,
+        tabList: [{name:'项目动态',value: 1}, {name:'公司动态',value: 0}, {name:'人员动态',value: 2}],
+        page: 1,
+        size: 10,
+        total: 0,
+        adviceInfo: {},
       }
     },
     computed: {
@@ -65,6 +139,7 @@
     },
     mounted() {
       vm = this
+      this._dynamicList()
     },
     methods: {
       ...mapMutations([]),
@@ -73,46 +148,76 @@
       },
       // 查询未读信息数量
       checkMsg() {
-        if (!vm.gettrendsType || vm.gettrendsType === 'COMPANY_DYNAMICS') {
-          vm.trendsType('COMPANY_DYNAMICS')
-        }
-        let params = new Object()
-        params.page = vm.search.page
-        params.size = vm.search.size
-        // params.trendsType = sessionStorage['trendsType']
-        params.trendsType = vm.gettrendsType
-        vm.axios.post(vm.urlApi.dynamicAll, params).then(data => {
-          if (data && data.code === 0) {
-            vm.noRead = data.data.noRead
-          }
-        })
       },
       // 关键字搜索
       subSearch() {
-        // console.log('搜索')
-        vm.content(vm.search.title)
-        vm.date(vm.search.date)
-        if ((vm.getcontent !== '' || vm.getdate !== '') && (vm.search.title !== '' || vm.search.date !== '')) {
-          // vm.checkMsg();
-          vm.$router.push({
-            name: 'searchCompany'
-          });
+        this.page = 1
+        this._dynamicList()
+        this.showState = true
+      },
+      ...mapMutations(['adviceId']),
+      // 根据动态类型查询
+      _dynamicList () {
+        const data = {
+          page: this.page,
+          size: this.size,
+          type: this.typeValue,
+          title: this.searchName,
+        }
+        if (this.timeValue == null) {
+          data.startTime = ''
+          data.endTime = ''
         } else {
-          //  vm.$router.go(0);
+          data.startTime = this.timeValue[0]
+          data.endTime = this.timeValue[1]
         }
-        if (vm.getdate == '' && vm.getcontent == '') {
-          if (!vm.gettrendsType || vm.gettrendsType === 'COMPANY_DYNAMICS') {
-            vm.$router.push('/dynamicCompany')
-          } else if (vm.gettrendsType === 'PROJECT_DYNAMICS') {
-            vm.$router.push('/projectCompany')
-          } else if (vm.gettrendsType === 'PERSONNEL_DYNAMICS') {
-            vm.$router.push('/personnelCompany')
+        dynamicList(data).then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            this.adviceList = res.data.rows
+            this.total = res.data.total
+            this.noRead = res.data.notRead
+          } else {
+            this.MessageError(res.message)
           }
-        }
+        })
+      },
+      back () {
+        this.showState = true
+        this._dynamicList()
+      },
+      changeTab (item, index) {
+        this.typeValue = item.value
+        this.currentSelect = index
+        this.typeName = item.name
+        this._dynamicList()
+        this.showState = true
+      },
+      detail (item) {
+        this.saveId = item.id
+        this._adviceDetail()
+        this.showState = false
+      },
+      _adviceDetail () {
+        adviceDetail({id: this.saveId}).then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            this.adviceInfo = res.data
+          } else {
+            this.MessageError(res.message)
+          }
+        })
+      },
+      // 点击变成当前页
+      handleCurrentChange(val) {
+        console.log(val)
+        this._dynamicList()
       },
       // 选择时间
       timeQuery () {
-        console.log(this.timeValue)
+        this.page = 1
+        this.showState = true
+        this._dynamicList()
       }
     }
   }
@@ -198,21 +303,20 @@
           .catalog {
             font-size: 20px;
             letter-spacing: 1px;
-            a {
+            cursor: pointer;
+            span {
               color: black;
               display: inline-block;
               height: 46px;
               width: 230px;
               text-align: center;
               line-height: 46px;
-              // border: 1px silver solid;
               border-radius: 40px;
               margin-top: 20px;
             }
-            .router-link-active {
+            .active {
               color: white;
               background: #45B78D;
-              // border: 1px silver solid;
             }
           }
         }
@@ -220,8 +324,173 @@
       .content-display {
         float: right;
         height: 100%;
-        // margin-left: 1%;
         width: 73%;
+        .CompanyIndex {
+          width: 100%;
+          height: 100%;
+          overflow: auto;
+          text-align: left;
+          .header {
+            height: 55px;
+            line-height: 55px;
+            background: #f4f6f7;
+            color: #767676;
+            padding-left: 22px;
+            overflow: hidden;
+            .header-title {
+              font-size: 20px;
+              font-weight: bold;
+              color: #767676;
+            }
+            .showNum {
+              float: right;
+            }
+            .header-pag {
+              padding-top: 10px;
+              font-size: 15px;
+              color: rgba(118, 118, 118, 1);
+              margin-right: 34px;
+              .el-pagination {
+                display: flex;
+                align-items: center;
+                height: 30px;
+                margin-top: 2px;
+              }
+            }
+          }
+          .company-content {
+            padding-left: 23px;
+            background: white;
+            .content-title {
+              font-size: 20px;
+              line-height: 55px;
+              color: #2C6EA2;
+              border-bottom: 2px solid #acacac;
+              span {
+                font-size: 14px;
+              }
+            }
+            .content-body {
+              width: 100%;
+              table {
+                width: 100%;
+                tr {
+                  cursor: pointer;
+                  td {
+                    height: 59px;
+                    line-height: 59px;
+                    font-size: 16px;
+                    border-bottom: 1px solid #E5E5E5;
+                  }
+                  .company-col-1 {
+                    width: 3%;
+                    img {
+                      position: relative;
+                      top: 1px;
+                      width: 17px;
+                      height: 14px;
+                    }
+                  }
+                  .company-col-2 {
+                    width: 20%;
+                  }
+                  .company-col-3 {
+                    .div1 {
+                      overflow: hidden;
+                      white-space: nowrap;
+                      text-overflow: ellipsis;
+                      width: 100%;
+                    }
+                    cursor: pointer;
+                    width: 50%;
+                  }
+                  .company-col-4 {
+                    width: 20%;
+                    padding-right: 30px;
+                    text-align: right;
+                  }
+                }
+              }
+            }
+          }
+          .company-pag {
+            text-align: center;
+            margin: 20px 0;
+          }
+        }
+        .index {
+          width: 100%;
+          height: 100%;
+          overflow: auto;
+          text-align: left;
+          .head {
+            width: 100%;
+            background: #f4f6f7;
+            font-size: 20px;
+            font-weight: bold;
+            color: rgba(118, 118, 118, 1);
+            height: 55px;
+            line-height: 55px;
+            text-indent: 22px;
+            span {
+              float: right;
+              margin-right: 22px;
+              font-size: 16px;
+              color: rgba(118, 118, 118, 1);
+              line-height: 55px;
+            }
+          }
+          .content {
+            width: 100%;
+            // height: calc(100% - 110px);
+            height: calc(100% - 55px);
+            background: rgba(255, 255, 255, 1);
+            padding: 15px;
+            padding-bottom: 481px;
+            overflow-y: auto; 
+            box-sizing: border-box;
+            .title-con{
+              height: 30px;
+              line-height: 30px;
+              .title {
+                font-size: 18px;
+                color: rgba(103, 103, 103, 1);
+                line-height: 0px;
+              }
+            }
+            span {
+              float: right;
+              margin-right: 46px;
+              padding-top: 12px;
+              font-size: 16px;
+              color: rgba(118, 118, 118, 1);
+              line-height: 0px;
+            }
+            .text {
+              padding-top: 38px;
+              padding-right: 10px;
+              font-size: 16px;
+              letter-spacing: 1px;
+              color: rgba(118, 118, 118, 1);
+              line-height: 27px;
+            }
+          }
+          .foot {
+            width: 100%;
+            background: #f4f6f7;
+            font-size: 16px;
+            color: rgba(118, 118, 118, 1);
+            line-height: 55px;
+            text-indent: 10px;
+            span:not(:first-child) {
+              float: right;
+              margin-right: 22px;
+              font-size: 16px;
+              color: rgba(118, 118, 118, 1);
+              line-height: 72px;
+            }
+          }
+        }
       }
     }
   }

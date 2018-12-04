@@ -1,39 +1,38 @@
 <template>
   <div class="second-container">
     <div class="header">
-      <el-input class="addPlan" size="small" placeholder="人员搜索" style="margin-right:10px" v-model="personName">
+      <el-input class="addPlan" size="small" placeholder="人员搜索" @change="nameSearch" style="margin-right:10px" v-model="personName">
       </el-input>
-      <el-select  style="margin-right:10px" size="small" v-model="job" clearable placeholder="岗位筛选">
-        <el-option v-for="(item, index) in jobList" :key="index" :label="item.name" :value="item.id">
+      <el-select  style="margin-right:20px" size="small" v-model="position" @change="positionSearch" clearable placeholder="岗位筛选">
+        <el-option v-if="item" v-for="(item, index) in positionList" :key="index" :label="item" :value="item">
         </el-option>
       </el-select>
-      <el-button size="small" type="success" class="hidenBtn" @click="showState = true">
-        导入表格
-      </el-button>
-      <el-button size="small" type="primary" style="margin-right:20px">导出表格</el-button>
     </div>
     <div class="project-table">
-      <el-table :header-cell-style="{background:'#FAFAFA',textAlign: 'center'}"  :data="personList" :stripe="true" style="width: 100%">
+      <el-table :header-cell-style="{background:'#FAFAFA',textAlign: 'center'}"  :data="staffList" :stripe="true" style="width: 100%">
         <el-table-column type="index" align="center" label="序号" width="60">
         </el-table-column>
-        <el-table-column prop="name" label="名字" style="width: 20%">
+        <el-table-column prop="name" align="center" label="名称">
         </el-table-column>
-        <el-table-column prop="job" label="岗位" style="width: 20%">
+        <el-table-column prop="position" align="center" label="岗位">
         </el-table-column>
-        <el-table-column prop="salary" label="薪资" style="width: 20%">
+        <el-table-column prop="department.name" align="center" label="所属部门">
         </el-table-column>
-        <el-table-column prop="zhuanzheng" label="转正情况" style="width: 20%">
+        <el-table-column prop="userLevel.level" align="center" label="等级">
         </el-table-column>
-        <el-table-column prop="startTime" align="center" label="入职时间" style="width: 20%">
+        <el-table-column prop="positive" align="center" label="转正情况">
+          <template slot-scope="scope">
+            <span>{{positiveFil[scope.row.positive]}}</span>
+          </template>
         </el-table-column>
-        <el-table-column prop="finish" align="center" label="日任务完成率" style="width: 20%">
+        <el-table-column prop="userStatus.text" align="center" label="任务状态">
         </el-table-column>
-        <el-table-column prop="time" align="center" label="调薪节点" style="width: 20%">
+        <el-table-column prop="hiredDate" align="center" label="入职时间">
         </el-table-column>
         <el-table-column align="center" label="操作">
           <template slot-scope="scope">
             <el-button type="primary" size="small" @click="detailGo(scope.row)">详情</el-button>
-            <el-button type="danger" size="small" @click="delPerson(scope.row)">删除</el-button>
+            <el-button type="success" size="small" @click="score(scope.row)">评分</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -45,21 +44,18 @@
       :total="totalElements">
       </el-pagination>
     </div>
-    <el-dialog title="上传人员列表" :visible.sync="showState" width="35%" center>
+    <el-dialog :title="staffName+'的评分'" :close-on-click-modal="false" :visible.sync="showState" width="35%" center>
       <el-row style="margin-top:20px">
-        <el-col :offset="4" :span="8">
-          <el-button type="primary"><a style="color:white" :href="downUrl">下载excel模板</a></el-button>
+        <el-col :offset="5" :span="6">
+          <span style="line-height:40px;font-size:16px;">请进行评分：</span>
         </el-col>
         <el-col :span="8">
-          <el-upload :action="uploadUrl" :file-list="fileList" :data="dataParams()" :on-success="isDemand" :show-file-list="false">
-            <el-button style="background-color:#45B78D;border-color:none;color:white">上传excel表格
-            </el-button>
-          </el-upload>
+          <el-input-number v-model="scoreAmount" :min="0" :max="30" label="评分"></el-input-number>
         </el-col>
       </el-row>
       <span slot="footer" class="dialog-footer">
           <el-button @click="showState = false">取 消</el-button>
-          <el-button type="primary" @click="showState = false">确 定</el-button>
+          <el-button type="primary" @click="confirm">确 定</el-button>
         </span>
     </el-dialog>
   </div>
@@ -67,58 +63,69 @@
 <script>
   let vm
   import { mapGetters, mapMutations } from 'vuex'
-  import { groupMemberList } from '@/api/request'
+  const SUCCESS_OK = '200'
+  import { getDepartmentUsersList, allPosition, managerScore } from '@/api/request'
   export default {
     data() {
       return {
-        jobList: [],
-        job: '',
+        scoreAmount: 30,
         showState: false,
         personName: '',
         otherUsers: [],
         userId: '',
-        personList: [1,2], // 人员列表
-        fileList: new Array(), //上传文件列表
-        uploadUrl: this.api + '/projectsPlanNew/uploadFile',
+        staffName: '',
+        positionList: [],
+        position: '',
+        staffList: [], // 人员列表
         downUrl: '',
+        positiveFil: {
+          '0': '未转正',
+          '1': '已转正'
+        },
         moduleInput: '',
         form: {
           name: ''
         },
         page: 1,
         size: 10,
-        totalElements: 10
+        totalElements: 0
       }
     },
     computed: {
-      ...mapGetters(['getcurrentSelect1', 'getprojectId'])
+      ...mapGetters([])
     },
     mounted() {
       vm = this
-      this._groupMemberList()
+      this._allPosition()
+      this._getDepartmentUsersList()
     },
     methods: {
-      ...mapMutations([]),
-      // 组员人员列表获取
-      _groupMemberList () {
-        let data = {
-          page: this.page,
-          size: this.size,
-          userInfo: ''
+      ...mapMutations(['staffId']),
+      handleCurrentChange() {
+        this._getDepartmentUsersList()
+      },
+      confirm () {
+        const data = {
+          userId: this.userId,
+          score: this.scoreAmount
         }
-        groupMemberList(data).then(res => {
+        managerScore(data).then(res=> {
           res = res.data
-          // console.log(res)
-          if (res.state == 200) {
-
+          if (res.state == SUCCESS_OK) {
+            this.MessageSuccess(res.message)
+            this.showState = false
+          } else {
+            this.MessageError(res.message)
           }
         })
       },
-      handleCurrentChange() {
-        console.log(this.page)
+      nameSearch () {
+        this.page = 1
+        this._getDepartmentUsersList()
       },
-      // 获取下载模板
-      downTem() {
+      positionSearch () {
+        this.page = 1
+        this._getDepartmentUsersList()
       },
       dataParams() {
         return {
@@ -127,28 +134,44 @@
       },
       detailGo (item) {
         this.$router.push('/home/staffDetail')
+        this.staffId(item.id)
       },
-      delPerson (item) {},
-      jump(url, id) {
-        vm.$router.push(url)
-        vm.currentSelect = id
+      score (item) {
+        this.staffName = item.name
+        this.userId = item.id
+        this.showState = true
       },
-      // 上传计划表格的成功回调函数
-      isDemand(response, file, fileList) {
-        if (response.code == 0) {
-          this.MessageSuccess(response.msg)
-          vm.planUploadState(1)
-        } else {
-          this.MessageError(response.msg)
-          vm.planUploadState(0)
+      // 获取所有员工的列表
+      _getDepartmentUsersList () {
+        const data = {
+          name: this.personName,
+          page: this.page,
+          size: this.size,
+          position: this.position
         }
+        getDepartmentUsersList(data).then(res => {
+          res = res.data
+          // console.log(res)
+          if (res.state == SUCCESS_OK) {
+            this.staffList = res.data.rows
+            this.totalElements = res.data.total
+          } else {
+            this.MessageError(res.message)
+          }
+
+        })
       },
-      // 弹出新增类别输入框
-      addCategory() {
-        vm.isCateShow = true;
-      },
-      hideCate() {
-        vm.isCateShow = false;
+      // 获取所有岗位的列表
+      _allPosition () {
+        allPosition().then(res => {
+          res = res.data
+          // console.log(res)
+          if (res.state = SUCCESS_OK) {
+            this.positionList = res.data
+          } else {
+            this.MessageError(res.message)
+          }
+        })
       }
     },
     destroyed() {
@@ -190,7 +213,7 @@
     }
     .project-paging {
       text-align: center;
-      padding: 10px 16px 15px 16px;
+      padding: 10px 16px 10px 16px;
     }
     .hidenBtn:hover {
       opacity: .85;

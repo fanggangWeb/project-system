@@ -4,17 +4,19 @@
       首页 > 分配
       <div class="searchContent">
         <div class="searchProject">
-          <el-input placeholder="搜索项目名称" v-model="projectName" clearable>
+          <el-input placeholder="搜索项目名称" v-model="projectName" @change="nameSearch" clearable>
           </el-input>
-          <a href="" @click.prevent="nameSearch"><i class="el-icon-search"></i></a>
+          <!-- <a href="" @click.prevent="nameSearch"><i class="el-icon-search"></i></a> -->
         </div>
-        <el-select style="width:130px;margin-left:20px;" v-model="PMValue" clearable placeholder="项目PM">
-          <el-option v-for="item in PMList" :key="item.value" :label="item.label" :value="item.value">
+        <el-select style="width:130px;margin-left:20px;" v-model="PMValue" @change="nameSearch" clearable placeholder="项目PM">
+          <el-option v-for="item in PMList" :key="item.id" :label="item.name" :value="item.id">
           </el-option>
         </el-select>
         <el-date-picker
           style="margin: 0 20px;width:160px"
           v-model="searchTime"
+          value-format="yyyy-MM-dd"
+          @change="nameSearch"
           type="date"
           placeholder="项目开始时间">
         </el-date-picker>
@@ -24,11 +26,20 @@
       <el-table :header-cell-style="{textAlign: 'center'}"  :data="projectsList" :stripe="true" style="width: 100%">
         <el-table-column type="index" align="center" label="序号" width="60">
         </el-table-column>
-        <el-table-column prop="name" label="项目名称">
+        <el-table-column prop="projectBaseInfo.name" align="center" label="项目名称">
         </el-table-column>
-        <el-table-column prop="name" label="项目PM">
+        <el-table-column prop="projectManager.userInfo.name" align="center" label="项目PM">
         </el-table-column>
-        <el-table-column prop="name" label="设计师">
+        <el-table-column align="center" label="设计师">
+          <template slot-scope="scope">
+            <span v-for="(item,index) in scope.row.projectDesigners"  :key="index">
+              {{item.userInfo.name}}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="projectStatus.text" align="center" label="项目状态">
+        </el-table-column>
+        <el-table-column prop="projectBaseInfo.startTime" align="center" label="开始时间">
         </el-table-column>
         <el-table-column align="center" label="操作">
           <template slot-scope="scope">
@@ -47,26 +58,41 @@
     <el-dialog :visible.sync="showState" :close-on-click-modal="false" width="50%" center>
       <el-row style="font-size:16px;line-height:25px;color:rgb(144, 147, 153)">
         <el-col :span="18">
-          <span>项目名称：太寺垭公众号</span>
+          <span>项目名称：{{productName}}</span>
         </el-col>
         <el-col :span="6">
-          <span>项目PM：覃定金</span>
+          <span>项目PM：{{productPM}}</span>
         </el-col>
       </el-row>
       <el-row style="font-size:16px;line-height:25px;margin-top:20px;color:rgb(144, 147, 153)">
-        <el-col  :span="20">描述：测试测试测试测试测试测试测hi是路上看到房价的酸辣粉等级六十开发机撒娇卢卡斯解放拉萨的饭卡上</el-col>
+        <el-col  :span="20">描述：{{productInfo}}</el-col>
       </el-row>
-      <el-row style="font-size:16px;line-height:25px;margin-top:20px;color:rgb(144, 147, 153)">
-        <el-col>
-          <span>选择设计师</span>
-          <el-select style="width:160px;margin-left:20px;" v-model="PMValue" clearable placeholder="选择设计师">
-            <el-option v-for="item in PMList" :key="item.value" :label="item.label" :value="item.value">
-          </el-option>
-        </el-select>
-        </el-col>
-      </el-row>
+      <el-form :model="form" ref="form" :rules="rules" style="margin-top:20px;margin-left:25%;">
+        <el-form-item label-width="130px" prop="designer" label="设计师:">
+          <el-select v-model="form.designer" clearable placeholder="选择设计师">
+            <el-option v-for="item in designerList" :key="item.id" :label="item.name" :value="item.id">
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label-width="130px" prop="startTime" label="开始时间:">
+          <el-date-picker
+            v-model="form.startTime"
+            value-format="yyyy-MM-dd HH:mm:ss"
+            type="datetime"
+            placeholder="开始时间">
+          </el-date-picker>
+        </el-form-item>
+        <el-form-item label-width="130px" prop="endTime" label="结束时间:">
+          <el-date-picker
+            v-model="form.endTime"
+            value-format="yyyy-MM-dd HH:mm:ss"
+            type="datetime"
+            placeholder="结束时间">
+          </el-date-picker>
+        </el-form-item>
+      </el-form>
       <span slot="footer" class="dialog-footer">
-        <el-button type="success" @click="showState = false">确 定</el-button>
+        <el-button type="success" @click="submit">确 定</el-button>
         <el-button @click="showState = false">取 消</el-button>
       </span>
     </el-dialog>
@@ -76,6 +102,8 @@
 <script>
   let vm
   import { mapGetters, mapMutations } from 'vuex'
+  import { getPMList, allProject, allDesigner, insertDesigner } from '@/api/request'
+  const SUCCESS_OK = '200'
   export default {
     data() {
       return {
@@ -84,55 +112,112 @@
         page: 1,
         size: 10,
         searchTime: '',
-        projectsList: [1,2],
+        projectsList: [],
         status: {},
         totalElements: 10,
         projectName: '',
         showState: false,
-        downUrl: ''
+        downUrl: '',
+        productInfo: '',
+        productName: '',
+        productPM: '',
+        designerList: [],
+        form: {
+          startTime: '',
+          endTime: '',
+          designer: ''
+        },
+        rules: {
+          startTime:[{required: true, message: '请选择开始时间', trigger: 'blur'}],
+          endTime:[{required: true, message: '请选择结束时间', trigger: 'blur'}],
+          designer:[{required: true, message: '请选择设计人员', trigger: 'blur'}]
+        }
       }
     },
-    mounted() {},
+    mounted() {
+      this._getPMList()
+      this._allDesigner()
+      this._allProject()
+    },
     methods: {
       ...mapMutations(['projectId']),
       assign (item) {
+        this.productInfo = item.projectIntro.text
+        this.productName = item.projectBaseInfo.name
+        this.productPM = item.projectManager.userInfo.name
+        this.saveId = item.id
         this.showState = true
-        this.projectId(item)
       },
       del (item) {},
-      nameSearch () {},
-      jump (data) {
-        this.$router.push(data)
-      },
-      handleCurrentChange() {
-        console.log(this.page)
-      },
-      // 上传计划表格的成功回调函数
-      isDemand(response, file, fileList) {
-        if (response.code == 0) {
-          this.MessageSuccess(response.msg)
-          vm.planUploadState(1)
-        } else {
-          this.MessageError(response.msg)
-          vm.planUploadState(0)
+      nameSearch () {
+        if (this.searchTime == null) {
+          this.searchTime = ''
         }
+        this.page = 1
+        this._allProject()
       },
-      // 获取下载模板
-      downTem() {
-      },
-      dataParams() {
-        return {
-          projectsId: this.getprojectId
-        }
-      },
-      // 提交表单
       submit () {
         this.$refs['form'].validate((valid) => {
           if (valid) {
-            alert('submit!')
+            const data = {
+              projectId: this.saveId,
+              endTime: this.form.endTime,
+              startTime: this.form.startTime,
+              userId: this.form.designer
+            }
+            insertDesigner(data).then(res => {
+              res = res.data
+              if (res.state == SUCCESS_OK) {
+                this.MessageSuccess(res.message)
+                this.showState = false
+                this._allProject()
+              } else {
+                this.MessageError(res.message)
+              }
+            })
           } else {
-            console.log('error submit!!');
             return false
+          }
+        })
+      },
+      handleCurrentChange() {
+        this._allProject()
+      },
+      _allProject () {
+        const data = {
+          name: this.projectName,
+          page: this.page,
+          size: this.size,
+          projectManagerId: this.PMValue,
+          startTime: this.searchTime
+        }
+        allProject(data).then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            this.projectsList = res.data.rows
+            this.totalElements = res.data.total
+          } else {
+            this.MessageError(res.message)
+          }
+        })
+      },
+      _getPMList () {
+        getPMList().then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            this.PMList = res.data
+          } else {
+            this.MessageError(res.message)
+          }
+        })
+      },
+      _allDesigner () {
+        allDesigner().then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            this.designerList = res.data
+          } else {
+            this.MessageError(res.message)
           }
         })
       }

@@ -95,7 +95,7 @@
     methods: {
       ...mapMutations(['projectId']),
       handleSuccess (response, file, fileList) {
-        console.log(response)
+        // console.log(response)
       },
       handleError (err, file, fileList){
         this.MessageError('上传附件失败')
@@ -112,7 +112,7 @@
         }
         performanceList(data).then(res => {
           res = res.data
-          console.log(res)
+          // console.log(res)
           if (res.state == SUCCESS_OK) {
             this.staffList = res.data.rows
             this.totalElements = res.data.total

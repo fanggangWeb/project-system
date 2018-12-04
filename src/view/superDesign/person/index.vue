@@ -4,49 +4,48 @@
       首页 > 人员
       <div class="searchContent">
         <div class="searchProject">
-          <el-input placeholder="人员搜索" v-model="personName" clearable>
+          <el-input placeholder="人员名称" v-model="personName" @change="nameSearch" clearable>
           </el-input>
-          <a href="" @click.prevent="nameSearch"><i class="el-icon-search"></i></a>
+          <!-- <a href="" @click.prevent="nameSearch"><i class="el-icon-search"></i></a> -->
         </div>
-        <el-select style="width:130px;margin-left:20px;" v-model="projectStatus" clearable placeholder="选择部门">
-          <el-option v-for="item in followList" :key="item.value" :label="item.label" :value="item.value">
-          </el-option>
-        </el-select>
-        <el-select style="width:130px;margin-left:20px;" v-model="projectStatus" clearable placeholder="岗位筛选">
-          <el-option v-for="item in followList" :key="item.value" :label="item.label" :value="item.value">
-          </el-option>
-        </el-select>
-        <el-date-picker
-          style="width:130px;margin-left:20px;"
+        <!-- <div class="selectChoose">
+          <el-select v-model="projectStatus" clearable placeholder="岗位筛选">
+            <el-option v-for="item in PMList" :key="item.value" :label="item.label" :value="item.value">
+            </el-option>
+          </el-select>
+        </div> -->
+        <!-- <el-date-picker
           v-model="searchTime"
           type="date"
-          placeholder="入职时间">
-        </el-date-picker>
-        <el-button type="success" style="margin:0 20px" @click="showState = true">
-          添加组员
-        </el-button>
+          value-format="yyyy-MM-dd"
+          style="margin-right:20px"
+          placeholder="选择入职时间">
+        </el-date-picker> -->
       </div>
     </div>
     <div class="project-table">
-      <el-table :header-cell-style="{textAlign: 'center'}"  :data="projectsList" :stripe="true" style="width: 100%">
+      <el-table :header-cell-style="{background:'#FAFAFA',textAlign: 'center'}"  :data="staffList" :stripe="true" style="width: 100%">
         <el-table-column type="index" align="center" label="序号" width="60">
         </el-table-column>
-        <el-table-column prop="name" label="名称">
+        <el-table-column prop="name" align="center" label="名称">
         </el-table-column>
-        <el-table-column prop="name" label="岗位">
+        <el-table-column prop="position" align="center" label="岗位">
         </el-table-column>
-        <el-table-column prop="name" label="所属部门">
+        <!-- <el-table-column prop="department.name" align="center" label="所属部门">
+        </el-table-column> -->
+        <el-table-column prop="salaryMonth" align="center" label="薪资">
         </el-table-column>
-        <el-table-column prop="name" label="薪资">
+        <el-table-column prop="positive" align="center" label="转正情况">
+          <template slot-scope="scope">
+            <span>{{positiveFil[scope.row.positive]}}</span>
+          </template>
         </el-table-column>
-        <el-table-column prop="name" label="转正情况">
-        </el-table-column>
-        <el-table-column prop="startTime" align="center" label="入职时间">
+        <el-table-column prop="hiredDate" align="center" label="入职时间">
         </el-table-column>
         <el-table-column align="center" label="操作">
           <template slot-scope="scope">
             <el-button type="primary" size="small" @click="detailGo(scope.row)">详情</el-button>
-            <el-button type="danger" size="small" @click="del(scope.row)">删除</el-button>
+            <!-- <el-button type="danger" size="small">删除</el-button> -->
           </template>
         </el-table-column>
       </el-table>
@@ -58,50 +57,45 @@
       :total="totalElements">
       </el-pagination>
     </div>
-    <el-dialog title="上传人员列表" :close-on-click-modal="false" :visible.sync="showState" width="35%" center>
-      <el-row style="margin-top:20px">
-        <el-col :offset="4" :span="8">
-          <el-button type="primary"><a style="color:white" :href="downUrl">下载excel模板</a></el-button>
-        </el-col>
-        <el-col :span="8">
-          <el-upload :action="uploadUrl" :file-list="fileList" :data="dataParams()" :on-success="isDemand" :show-file-list="false">
-            <el-button style="background-color:#45B78D;border-color:none;color:white">上传excel表格
-            </el-button>
-          </el-upload>
-        </el-col>
-      </el-row>
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="showState = false">取 消</el-button>
-        <el-button type="primary" @click="showState = false">确 定</el-button>
-      </span>
-    </el-dialog>
   </div>
 </template>
 
 <script>
   let vm
   import { mapGetters, mapMutations } from 'vuex'
+  const SUCCESS_OK = '200'
+  import { getDepartmentUsersList, allPosition } from '@/api/request'
   export default {
     data() {
       return {
-        followList: [],
+        PMList: [],
         projectStatus: '',
         page: 1,
         size: 10,
         searchTime: '',
-        projectsList: [1,2],
+        staffList: [],
         status: {},
         totalElements: 10,
         personName: '',
-        showState: false,
-        fileList: new Array(), //上传文件列表
-        uploadUrl: this.api + '/projectsPlanNew/uploadFile',
-        downUrl: ''
+        positiveFil: {
+          '0': '未转正',
+          '1': '已转正'
+        },
+        showState: false
       }
     },
-    mounted() {},
+    watch: {
+      showState: function (val, oldval) {
+        if (val == false) {
+          this.$refs['form'].resetFields();
+        }
+      }
+    },
+    mounted() {
+      this._getDepartmentUsersList()
+    },
     methods: {
-      ...mapMutations(['projectId']),
+      ...mapMutations(['staffId']),
       handleSuccess (response, file, fileList) {
         console.log(response)
       },
@@ -109,34 +103,36 @@
         this.MessageError('上传附件失败')
       },
       detailGo (item) {
-        this.projectId(item)
+        this.staffId(item.id)
         this.$router.push({path: '/home/superDesPersonDetail'})
       },
-      del (item) {},
-      nameSearch () {},
+      nameSearch () {
+        this.page = 1
+        this._getDepartmentUsersList()
+      },
       jump (data) {
         this.$router.push(data)
       },
       handleCurrentChange() {
-        console.log(this.page)
+        this._getDepartmentUsersList()
       },
-      // 上传计划表格的成功回调函数
-      isDemand(response, file, fileList) {
-        if (response.code == 0) {
-          this.MessageSuccess(response.msg)
-          vm.planUploadState(1)
-        } else {
-          this.MessageError(response.msg)
-          vm.planUploadState(0)
+      // 获取所有员工的列表
+      _getDepartmentUsersList () {
+        const data = {
+          name: this.personName,
+          page: this.page,
+          size: this.size
         }
-      },
-      // 获取下载模板
-      downTem() {
-      },
-      dataParams() {
-        return {
-          projectsId: this.getprojectId
-        }
+        getDepartmentUsersList(data).then(res => {
+          res = res.data
+          // console.log(res)
+          if (res.state == SUCCESS_OK) {
+            this.staffList = res.data.rows
+            this.totalElements = res.data.total
+          } else {
+            this.MessageError(res.message)
+          }
+        })
       },
       // 提交表单
       submit () {
@@ -152,6 +148,7 @@
     }
   }
 </script>
+
 <style lang="less" scoped>
   .container {
     width: 100%;
@@ -172,11 +169,12 @@
         display: flex;
         justify-content: flex-end;
         align-items: center;
+        margin-right: 20px;
         /*border: 1px solid;*/
         .searchProject {
           position: relative;
           .searchInput {
-            width: 200px;
+            width: 240px;
             height: 38px;
             vertical-align: middle;
             padding-left: 10px;
@@ -206,10 +204,10 @@
         color: #676767;
       }
       .addProject {
-        // width: 108px;
+        width: 108px;
         height: 40px; // align-self: center;
         margin-left: 20px;
-        margin-right: 20px;
+        margin-right: 54px;
         margin-top: 5px; // background-color: #45B68C;
         // cursor: pointer;
       }

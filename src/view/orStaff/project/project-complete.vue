@@ -2,19 +2,19 @@
   <div class="container">
     <div class="project-content">
       <div class="project-top">
-        <div class="project-top-up">100</div>
+        <div class="project-top-up">{{dataSummary.participationCount}}</div>
         <div class="project-top-under"><img style="margin-right:3px;" src="../../../assets/project-statistics-slices/projectNumber.png">领取任务</div>
       </div>
       <div class="project-top">
-        <div class="project-top-up">100</div>
+        <div class="project-top-up">{{dataSummary.finishCount}}</div>
         <div class="project-top-under"><img src="../../../assets/project-statistics-slices/complete.png"> 完成数量</div>
       </div>
       <div class="project-top">
-        <div class="project-top-up">100</div>
+        <div class="project-top-up">{{dataSummary.notFinishCount}}</div>
         <div class="project-top-under"><img src="../../../assets/project-statistics-slices/hangInTheAir.png"> 未完成</div>
       </div>
       <div class="project-top">
-        <div class="project-top-up">100</div>
+        <div class="project-top-up">{{dataSummary.finishedPercent*100}}%</div>
         <div class="project-top-under"><img src="../../../assets/project-statistics-slices/deadline.png"> 完成率</div>
       </div>
     </div>
@@ -22,15 +22,22 @@
       <el-table :header-cell-style="{background:'#FAFAFA',textAlign: 'center'}"  :data="projectsList" :stripe="true" style="width: 100%">
         <el-table-column type="index" align="center" label="序号" width="60">
         </el-table-column>
-        <el-table-column prop="name" label="功能模块" style="width: 20%">
+        <el-table-column prop="name" align="center" label="任务名称">
         </el-table-column>
-        <el-table-column prop="name" label="功能">
+        <el-table-column prop="projectPlan.module" align="center" label="模块名称">
         </el-table-column>
-        <el-table-column prop="startTime" align="center" label="开始时间" style="width: 20%">
+        <el-table-column prop="startTime" align="center" label="开始时间">
         </el-table-column>
-        <el-table-column prop="endTime" align="center" label="结束时间" style="width: 20%">
+        <el-table-column prop="realEndTime" align="center" label="结束时间">
         </el-table-column>
-        <el-table-column prop="endTime" align="center" label="完成状态" style="width: 20%">
+        <el-table-column prop="projectDailyTaskStatus.text" align="center" label="完成状态">
+        </el-table-column>
+        <el-table-column prop="text" align="center" label="描述">
+        </el-table-column>
+        <el-table-column label="操作" align="center">
+          <template slot-scope="scope">
+            <el-button type="success" size="small" @click="commit(scope.row)">完成</el-button>
+          </template>
         </el-table-column>
       </el-table>
     </div>
@@ -47,31 +54,67 @@
 <script>
   let vm
   import { mapGetters, mapMutations } from 'vuex'
+  import { taskSatistics, commitTask } from '@/api/request'
+  const SUCCESS_OK = '200'
   export default {
     data() {
       return {
         page: 1,
         size: 10,
-        projectsList: [1,2],
+        projectsList: [],
         status: {},
         totalElements: 10,
-        projectName: ''
+        projectName: '',
+        dataSummary: {}
       }
     },
     watch: {},
-    mounted() {},
+    computed: {
+      ...mapGetters(['getprojectId'])
+    },
+    mounted() {
+      this._taskSatistics()
+    },
     methods: {
       ...mapMutations(['projectId']),
       detailGo (item) {
         this.projectId(item)
         this.$router.push({path: '/home/projectDetail'})
       },
+      commit (item) {
+        commitTask({id: item.id}).then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            this.MessageSuccess(res.message)
+            this._taskSatistics()
+          } else {
+            this.MessageError(res.message)
+          }
+        })
+      },
+      _taskSatistics () {
+        const data = {
+          page: this.page,
+          size: this.size,
+          projectId: this.getprojectId
+        }
+        taskSatistics(data).then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            this.projectsList = res.data.rows
+            this.totalElements = res.data.total
+            this.dataSummary = res.data.projectDailyTaskStatisticsDTO
+          } else {
+            this.MessageError(res.message)
+          }
+        })
+      },
       nameSearch () {},
       jump (data) {
         this.$router.push(data)
       },
       handleCurrentChange() {
-        console.log(this.page)
+        this._taskSatistics()
       }
     }
   }

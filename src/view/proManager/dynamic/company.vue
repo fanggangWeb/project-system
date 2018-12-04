@@ -3,7 +3,9 @@
     <div class="header">
       <div class="header-title pull-left">
         公司动态
-        <span>(共{{total}}条动态，<span style="color:#45B78D">未读&nbsp;</span>{{trends.noRead}})</span>
+        <span>(共{{total}}条动态
+          <!-- <span style="color:#45B78D">未读&nbsp;</span>{{trends.noRead}} -->
+          )</span>
       </div>
       <!-- <div class="header-pag pull-right">
         <el-pagination background layout="prev, next" :current-page="page" :total="total" :page-size="size" prev-text="上一页" next-text="下一页" @current-change="handleCurrentChange">
@@ -12,33 +14,33 @@
       <span class="showNum">{{page}}/{{total === 0 ? 1 : total}}</span> -->
     </div>
     <!-- 今天 -->
-    <div v-if="today.length > 0" class="company-content">
+    <div v-if="adviceList.length > 0" class="company-content">
       <div class="content-title">
-        今天
-        <span>({{today.length}})</span>
+        未读通知
+        <span>({{adviceList.length}})</span>
       </div>
       <div class="content-body">
         <table>
-          <tr v-for="(item, index) in today" :key="index">
+          <tr v-for="(item, index) in adviceList" :key="index">
             <td class="company-col-1">
-              <!-- <img src="../../../assets/xiaoxi1.png" v-if="item.whetherToRead === 'NO_READ'">
-              <img src="../../../assets/xiaoxi2.png" v-if="item.whetherToRead === 'YES_READ'"> -->
-              <img src="../../../assets/xiaoxi1.png">
+              <img src="../../../assets/xiaoxi1.png" v-if="item.status == 0">
+              <img src="../../../assets/xiaoxi2.png" v-if="item.status == 1">
+              <!-- <img src="../../../assets/xiaoxi1.png"> -->
             </td>
-            <td class="company-col-2">发送人:{{item.dispatcherName}}</td>
+            <td class="company-col-2">发送人:{{item.publisher.name}}</td>
             <td class="company-col-3" @click="jump('/home/dynamic/detail', item)">
               <div class="div1">
-                {{item.content}}
+                {{item.title}}
               </div>
             </td>
             <!-- <td class="company-col-4">今天{{item.createTime | showDate}}</td> -->
-            <td class="company-col-4">今天{{item.createTime}}</td>            
+            <td class="company-col-4">{{item.createTime}}</td>            
           </tr>
         </table>
       </div>
     </div>
     <!-- 昨天 -->
-    <div v-if="yesterday.length > 0" class="company-content">
+    <!-- <div v-if="yesterday.length > 0" class="company-content">
       <div class="content-title">
         昨天
         <span>({{yesterday.length}})</span>
@@ -47,8 +49,8 @@
         <table>
           <tr v-for="(item,index) in yesterday" :key="index">
             <td class="company-col-1">
-              <!-- <img src="../../../assets/xiaoxi1.png" v-if="item.whetherToRead === 'NO_READ'">
-              <img src="../../../assets/xiaoxi2.png" v-if="item.whetherToRead === 'YES_READ'"> -->
+              <img src="../../../assets/xiaoxi1.png" v-if="item.whetherToRead === 'NO_READ'">
+              <img src="../../../assets/xiaoxi2.png" v-if="item.whetherToRead === 'YES_READ'">
               <img src="../../../assets/xiaoxi1.png">
             </td>
             <td class="company-col-2">发送人:{{item.dispatcherName}}</td>
@@ -57,14 +59,14 @@
                 {{item.content}}
               </div>
             </td>
-            <!-- <td class="company-col-4">昨天{{item.createTime | showDate}}</td> -->
+            <td class="company-col-4">昨天{{item.createTime | showDate}}</td>
             <td class="company-col-4">昨天{{item.createTime}}</td>
           </tr>
         </table>
       </div>
-    </div>
+    </div> -->
     <!-- 更早以前 -->
-    <div v-if="beforeYesterday.length > 0" class="company-content">
+    <!-- <div v-if="beforeYesterday.length > 0" class="company-content">
       <div class="content-title">
         更早以前
         <span>({{beforeYesterday.length}})</span>
@@ -73,8 +75,8 @@
         <table>
           <tr v-for="(item,index) in beforeYesterday" :key="index">
             <td class="company-col-1">
-              <!-- <img src="../../../../assets/xiaoxi1.png" v-if="item.whetherToRead === 'NO_READ'">
-              <img src="../../../../assets/xiaoxi2.png" v-if="item.whetherToRead === 'YES_READ'"> -->
+              <img src="../../../../assets/xiaoxi1.png" v-if="item.whetherToRead === 'NO_READ'">
+              <img src="../../../../assets/xiaoxi2.png" v-if="item.whetherToRead === 'YES_READ'">
               <img src="../../../assets/xiaoxi1.png">
             </td>
             <td class="company-col-2">发送人:{{item.dispatcherName}}</td>
@@ -83,21 +85,24 @@
                 {{item.title}}
               </div>
             </td>
-            <!-- <td class="company-col-4">{{item.createTime | showDate}}</td> -->
+            <td class="company-col-4">{{item.createTime | showDate}}</td>
             <td class="company-col-4">{{item.createTime}}</td>
           </tr>
         </table>
       </div>
-    </div>
+    </div> -->
     <!-- 分页 -->
     <div class="company-pag">
       <el-pagination background layout="prev, pager, next" :current-page="page" :total="total" :page-size="size" @current-change="handleCurrentChange" @prev-click="handleCurrentChange" @next-click="handleCurrentChange">
       </el-pagination>
     </div>
   </div>
+  
 </template>
 
 <script>
+  import { dynamicList } from '@/api/request'
+  const SUCCESS_OK = '200'
   let vm
   import {
     mapMutations
@@ -106,13 +111,13 @@
     data() {
       return {
         trends: {},
-        today: [1,2],
-        yesterday: [1,2,3,4,5,5,5,5,5,5,5,5,5,5,5,55,5,5,5,5],
-        beforeYesterday: [1,2],
+        adviceList: [],
+        yesterday: [],
+        beforeYesterday: [],
         whetherRead: 0,
         page: 1,
         size: 10,
-        total: 10
+        total: 0
       }
     },
     filters: {
@@ -125,17 +130,36 @@
     },
     mounted() {
       vm = this
+      this._dynamicList()
     },
     methods: {
-      ...mapMutations([]),
+      ...mapMutations(['adviceId']),
       // 根据动态类型查询
-      dynamicAll() {
+      _dynamicList () {
+        const data = {
+          page: this.page,
+          size: this.size,
+          type: 0,
+          title: '',
+          startTime: '',
+          endTime: ''
+        }
+        dynamicList(data).then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            this.adviceList = res.data.rows
+            this.total = res.data.total
+          } else {
+            this.MessageError(res.message)
+          }
+        })
       },
       // 点击变成当前页
       handleCurrentChange(val) {
         // console.log(val)
       },
-      jump (url,id) {
+      jump (url,item) {
+        this.adviceId(item.id)
         this.$router.push({path: url})
       }
     }

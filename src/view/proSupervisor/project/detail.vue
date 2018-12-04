@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <div class="header">首页&nbsp;>&nbsp;<a href="" @click.prevent="jump('/home/orProject', '')">项目</a>&nbsp;&gt;&nbsp;<a href="#">项目详情</a>
+    <div class="header">首页&nbsp;>&nbsp;<a href="" @click.prevent="jump('/home/superProject', '')">项目</a>&nbsp;&gt;&nbsp;<a href="#">项目详情</a>
     </div>
     <div class="details-content">
       <div class="details-menu">

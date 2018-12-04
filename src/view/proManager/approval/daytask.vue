@@ -1,14 +1,28 @@
 <template>
   <div class="second-container">
+    <div class="header">
+      <el-input class="addPlan" size="small" placeholder="项目名称" clearable @change="nameSearch"  v-model="projectName">
+      </el-input>
+      <el-select v-model="projectStatus" style="margin:0 16px 0 20px; width:140px;" @change="nameSearch" size="small" clearable placeholder="目前状态">
+        <el-option v-for="item in options12" :key="item.id" :label="item.text" :value="item.id">
+        </el-option>
+      </el-select>
+      <!-- <el-input size="small" placeholder="负责人名称" clearable style="margin-left:20px;" @change="nameSearch" v-model="principalName">
+      </el-input>
+      <el-input size="small" placeholder="任务名称" clearable style="margin: 0 16px 0 20px;" @change="nameSearch" v-model="taskName">
+      </el-input> -->
+    </div>
     <div class="project-table">
-      <el-table :header-cell-style="{background:'#FAFAFA',textAlign: 'center'}"  :data="taskList" :stripe="true" style="width: 100%">
+      <el-table :header-cell-style="{background:'#FAFAFA',textAlign: 'center'}"  :data="projectsList" :stripe="true" style="width: 100%">
         <el-table-column type="index" align="center" label="序号" width="60">
         </el-table-column>
-        <el-table-column prop="name" label="人员">
+        <el-table-column prop="projectBaseInfo.name" align="center" label="名称" style="width: 20%">
         </el-table-column>
-        <el-table-column prop="time" label="时间">
+        <el-table-column prop="projectBaseInfo.startTime" align="center" label="开始时间" style="width: 20%">
         </el-table-column>
-        <el-table-column prop="state" label="计划状态">
+        <el-table-column prop="projectBaseInfo.endTime" align="center" label="结束时间" style="width: 20%">
+        </el-table-column>
+        <el-table-column prop="projectStatus.text" align="center" label="状态" style="width: 20%">
         </el-table-column>
         <el-table-column align="center" label="操作">
           <template slot-scope="scope">
@@ -19,9 +33,9 @@
     </div>
     <div class="project-paging">
       <el-pagination background layout="prev, pager, next" 
-      :page-size="size" @current-change="handleCurrentChange"
-      :current-page.sync="page"
-      :total="totalElements">
+        :page-size="size" @current-change="handleCurrentChange"
+        :current-page.sync="page"
+        :total="totalElements">
       </el-pagination>
     </div>
   </div>
@@ -29,14 +43,32 @@
 <script>
   let vm
   import { mapGetters, mapMutations } from 'vuex'
+  import { proProjectList } from '@/api/request'
+  const SUCCESS_OK = '200'
   export default {
     name: "projectDetails",
     data() {
       return {
-        taskList: [1,2], // 人员列表
+        options12: [{
+          "id": 1,
+          "text": "进行中"
+        },
+        {
+          "id": 2,
+          "text": "已结项"
+        },
+        {
+          "id": 3,
+          "text": "已交付"
+        }],
+        projectStatus: '',
+        projectName: '',
+        principalName: '',
+        taskName: '',
+        projectsList: [],
         page: 1,
-        size: 10,
-        totalElements: 10
+        size: 9,
+        totalElements: 0
       }
     },
     computed: {
@@ -46,26 +78,42 @@
     },
     mounted() {
       vm = this
-      console.log(this.$route)
+      this._proProjectList()
     },
     methods: {
-      ...mapMutations([]),
-      searchByJob() {
-        vm.selectPerson(vm.personId)
+      ...mapMutations(['projectId']),
+      nameSearch () {
+        this.page = 1
+        this._proProjectList()
+      },
+      // 获取项目列表
+      _proProjectList () {
+        const data = {
+          page: this.page,
+          size: this.size,
+          name: this.projectName,
+          status: this.projectStatus
+        }
+        proProjectList(data).then(res => {
+          res = res.data
+          // console.log(res.data)
+          if (res.state == SUCCESS_OK) {
+            this.projectsList = res.data.rows
+            this.totalElements = res.data.total
+          } else {
+            this.MessageError(res.message)
+          }
+        })
       },
       handleCurrentChange() {
-        console.log(this.page)
+        this._proProjectList()
       },
       // 获取下载模板
       downTem() {
       },
-      dataParams() {
-        return {
-          projectsId: this.getprojectId
-        }
-      },
       detailGo (item) {
         this.$router.push('/home/daytaskDetail')
+        this.projectId(item.id)
       },
     },
     destroyed() {
@@ -80,12 +128,12 @@
     text-align: left;
     overflow: auto;
     background-color: white;
-    padding: 20px;
+    padding: 0 20px 20px 20px;
     box-sizing: border-box;
     .header {
-      height: 70px;
-      line-height: 70px;
-      background: #f4f6f7;
+      height: 60px;
+      line-height: 60px;
+      background: white;
       font-size: 22px;
       color: #4d4d4d;
       padding-left: 30px;
@@ -97,12 +145,9 @@
       .addPlan {
         margin-left: auto;
       }
-      .addCate {
-        margin-right: 36px;
-      }
     }
     .project-table {
-      padding: 30px 16px 0 16px;
+      padding: 0px 16px 0 16px;
     }
     .project-paging {
       text-align: center;

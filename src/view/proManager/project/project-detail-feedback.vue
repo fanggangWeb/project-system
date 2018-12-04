@@ -23,82 +23,41 @@
         </div>
         <div class="contentArea">
           <!--<div class="contentRow">-->
-          <div class="contentCol" v-for="(date,index) in lastMonthCalendar" :style="'flex-order:'+index">
+          <div class="contentCol" v-for="(date,index) in lastMonthCalendar" :key="date" :style="'flex-order:'+index">
             <span class="dateSpan">{{date}}</span>
           </div>
-          <div class="contentCol" v-for="(date,index) in thisMonthCalendar">
+          <div class="contentCol" v-for="date in thisMonthCalendar" :key="date">
             <span class="dateSpan">{{date | keepDateOnly}}</span>
-            <!-- <div class="taskRow" v-for="(subTask,i) in ProjectsCompleteInfo" v-if="subTask.estimatedEndTime === date">
-              <el-button type="primary" v-if="subTask.state==1" @click="detailShow(subTask.estimatedEndTime)">详情</el-button>
-            </div> -->
+            <div class="taskRow" v-for="(task,index) in projectsCompleteInfo" :key="index" v-if="task.taskDate === date">
+              <el-button type="primary" size="small" v-if="task.hasTask==true" @click="detailShow(task)">{{task.message}}</el-button>
+            </div>
           </div>
-          <div class="contentCol" v-for="(date,index) in nextMonthCalendar" :style="'flex-order:'+index">
+          <div class="contentCol" v-for="(date,index) in nextMonthCalendar" :key="date" :style="'flex-order:'+index">
             <span class="dateSpan">{{date}}</span>
           </div>
         </div>
       </div>
     </div>
-    <div class="table projectDetailsComplete" v-if="!showState">
-      <el-button @click="backCalender" type="primary">返回日历表</el-button>
-      <el-table
-        :data="tableData"
-        :stripe="true"
-        style="width: 100%">
-        <el-table-column
-          prop="principalName"
-          label="姓名"
-          width="180">
+    <div class="table" v-if="!showState">
+      <el-button @click="backCalender" class="backBtn" type="primary">返回日历表</el-button>
+      <el-table :data="tableData" :stripe="true" :span-method="objectSpanMethod" style="width: 100%">
+        <el-table-column prop="principal.name" align="center" label="姓名">
         </el-table-column>
-        <el-table-column
-          prop="projectName"
-          label="项目名称"
-          width="180">
+        <el-table-column prop="name" align="center" label="任务名称">
         </el-table-column>
-        <el-table-column
-          prop="tasksName"
-          label="任务名称"
-          width="180">
+        <el-table-column prop="startTime" align="center" label="开始时间">
+          <!-- <template slot-scope="scope">
+            <span v-if="!scope.row.createTime">无</span>
+            <span v-if="scope.row.createTime">{{scope.row.createTime  | timestampToTime}}</span>
+          </template> -->
         </el-table-column>
-        <el-table-column
-          prop="creationTime"
-          label="开始时间">
-          <template slot-scope="scope">
-            <span v-if="!scope.row.creationTime">无</span>
-            <span v-if="scope.row.creationTime">{{scope.row.creationTime  | timestampToTime}}</span>
-          </template>
+        <el-table-column prop="realEndTime" align="center" label="结束时间">
         </el-table-column>
-        <el-table-column
-          prop="estimatedEndTime"
-          label="结束时间">
-          <template slot-scope="scope">
-            <span v-if="!scope.row.estimatedEndTime">无</span>
-            <span v-if="scope.row.estimatedEndTime">{{scope.row.estimatedEndTime}}</span>
-          </template>
+        <el-table-column prop="workingTime" align="center" label="累计工时">
         </el-table-column>
-        <el-table-column
-          prop="status"
-          label="任务状态">
-          <template slot-scope="scope">
-            <span v-if="!scope.row.status">无</span>
-            <span v-if="scope.row.status">{{ scope.row.status | translate(statusList) }}</span>
-          </template>
+        <el-table-column prop="cost" align="center" label="成本">
         </el-table-column>
-        <el-table-column
-          prop="priority"
-          label="优先级">
-          <template slot-scope="scope">
-           <span v-if="!scope.row.priority">无</span>
-            <span v-if="scope.row.priority">{{ scope.row.priority | translate(priorityList) }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="verifierName"
-          label="审核人名字"
-          width="180">
-            <template slot-scope="scope">
-              <span v-if="!scope.row.verifierName">无</span>
-              <span v-if="scope.row.verifierName">{{scope.row.verifierName}}</span>
-            </template>
+        <el-table-column prop="principal.userStatus.text" align="center" label="状态">
         </el-table-column>
       </el-table>
     </div>
@@ -106,10 +65,11 @@
 </template>
 <script>
   import common from "../../../utils/common"
-  import { mapGetters,mapMutations  } from 'vuex'
-  let vm;
+  import { getFeedBack, getFeedBackInfo } from '@/api/request'
+  import { mapGetters, mapMutations } from 'vuex'
+  const SUCCESS_OK = '200'
+  let vm
   export default {
-    name: "projectComplete",
     data() {
       return {
         showState: true,
@@ -120,18 +80,7 @@
         nextMonthCalendar: [],
         thisMonthCalendar: [],
         calendar: [],
-        // projectsId: sessionStorage.projectId,
-        ProjectsCompleteInfo: [],
-        subTask: {
-          principalName: '',
-          subtaskName: '',
-          status: '',
-        },
-        priorityList:{
-          'LEVEL_LOW':'低',
-          'LEVEL_GENERAL':'普通',
-          'LEVEL_HIGH':'高',
-        },
+        projectsCompleteInfo: [],
         statusList: {
           'CONDUCTING': '进行中',
           'FINISH': '已完成',
@@ -156,7 +105,7 @@
       },
       // 时间戳转为时间
       timestampToTime(timestamp) {
-        var date = new Date(timestamp);//时间戳为10位需*1000，时间戳为13位的话不需乘1000
+        var date = new Date(timestamp) // 时间戳为10位需*1000，时间戳为13位的话不需乘1000
         var Y = date.getFullYear() + '-';
         var M = (date.getMonth() + 1 < 10 ? '0' + (date.getMonth() + 1) : date.getMonth() + 1) + '-';
         var D = date.getDate() + ' ';
@@ -175,24 +124,85 @@
       },
     },
     mounted() {
-      vm = this;
+      vm = this
+      this._getFeedBack()
       vm.year = vm.today.getFullYear();
       vm.currentMonth = vm.today.getMonth() + 1;
       vm.getCalendar();
-      // vm.getProjectsCompleteInfo();
     },
-    computed: {},
+    computed: {
+      ...mapGetters(['getprojectId'])
+    },
     methods: {
-      detailShow (estimatedEndTime) {
+      setTable() {
+        let spanOneArr = [],
+          spanTwoArr = [],
+					concatOne = 0,
+					concatTwo = 0
+				this.tableData.forEach((item, index) => {
+					if (index === 0) {
+						spanOneArr.push(1);
+						spanTwoArr.push(1);
+					} else {
+						if (item.principal.name == this.tableData[index - 1].principal.name) { //第一列需合并相同内容的判断条件
+							spanOneArr[concatOne] += 1;
+							spanOneArr.push(0);
+						} else {
+							spanOneArr.push(1);
+							concatOne = index;
+						};
+					}
+				});
+				return {
+					one: spanOneArr,
+					two: spanTwoArr
+				}
+			},
+      objectSpanMethod({
+				row, //当前行
+				column, //当前列
+				rowIndex, //当前行号
+				columnIndex //当前列号
+			}) {
+				if(	columnIndex === 0) { //第一列相同的合并
+					const _row = (this.setTable(this.tableData).one)[rowIndex];
+					const _col = _row > 0 ? 1 : 0;
+					return {
+						rowspan: _row,
+						colspan: _col
+					};
+				}
+			},
+      // 获取反馈
+      _getFeedBack () {
+        getFeedBack({projectId: this.getprojectId}).then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            // console.log(res)
+            var hash = {}
+            let arr = res.data.reduce(function (item, next) {
+              hash[next.taskDate] ? '' : hash[next.taskDate] = true && item.push(next)
+              return item
+            }, [])
+            this.projectsCompleteInfo = arr
+          } else {
+            this.MessageError(res.message)
+          }
+        })
+      },
+      detailShow (item) {
         this.showState = false
         const data = {
-          dateStr:estimatedEndTime,
-          projectsId: this.$store.state.projectId
+          taskTime: item.taskDate,
+          projectId: this.getprojectId
         }
-        vm.axios.post(vm.urlApi.getProjectsCompleteInfoDetails, data).then(res => {
-          if (res.code == 0) {
-            // console.log(res)
+        getFeedBackInfo(data).then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            console.log(res.data)
             this.tableData = res.data
+          } else {
+            this.MessageError(res.message)
           }
         })
       },
@@ -214,7 +224,7 @@
         }
         vm.resetCalendar();
         vm.getCalendar();
-        // vm.getProjectsCompleteInfo();
+        vm._getFeedBack();
       },
       ToLastMonth() {
         if(vm.currentMonth > 1){
@@ -225,7 +235,7 @@
         }
         vm.resetCalendar();
         vm.getCalendar();
-        // vm.getProjectsCompleteInfo();
+        vm._getFeedBack();
       },
       // 获取日历
       getCalendar() {
@@ -246,27 +256,11 @@
           vm.thisMonthCalendar.push(newDate);
         }
       },
-
       // 分页显示
       currentChange(month) {
         vm.currentMonth = month;
-        vm.getProjectsCompleteInfo()
-      },
-      // 获取
-      getProjectsCompleteInfo() {
-        console.log(this.$store.state.projectId)
-        let req = new Object();
-        let month = vm.currentMonth >= 10 ? vm.currentMonth : '0' + vm.currentMonth;
-        req.dateStr = vm.year + '-' + month;
-        // req.projectsId = vm.getprojectId;
-        req.projectsId = vm.$store.state.projectId
-        vm.axios.post(vm.urlApi.getProjectsCompleteInfo, req).then(res => {
-          console.log(res)
-          if (res.code == 0) {
-            vm.ProjectsCompleteInfo = res.data;
-          }
-        })
-      },
+        vm._getFeedBack()
+      }
     }
   }
 </script>
@@ -275,7 +269,6 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    height: 100%;
     text-align: left;
     padding: 20px 30px;
     box-sizing: border-box;
@@ -316,7 +309,7 @@
         width: 100%;
         margin: 0 1%;
         background: #FAFAFA;
-        opacity: 0.6;
+        // opacity: 0.6;
         .contentCol {
           display: flex;
           flex-direction: column;
@@ -346,6 +339,13 @@
           }
         }
       }
+    }
+  }
+  .table {
+    max-height: 680px;
+    overflow-y: auto;
+    .backBtn {
+      width: 100%;
     }
   }
 </style>

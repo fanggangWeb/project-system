@@ -25,7 +25,7 @@
             </label>
           </div>
           </span>
-        <el-upload class="upload-frame" :action="this.uploadApi" :on-success="isDemand" :show-file-list="false">
+        <el-upload :with-credentials='true' class="upload-frame" :action="this.uploadApi" :on-success="isDemand" :show-file-list="false">
           <el-button size="small" type="success" circle icon="el-icon-plus"></el-button>
         </el-upload>
       </div>
@@ -46,18 +46,18 @@
             </label>
           </div>
         </span>
-        <el-upload class="upload-frame" :action="this.uploadApi" :on-success="isFlow" :show-file-list="false">
+        <el-upload :with-credentials='true' class="upload-frame" :action="this.uploadApi" :on-success="isFlow" :show-file-list="false">
           <el-button size="small" type="success" circle icon="el-icon-plus"></el-button>
         </el-upload>
       </div>
       <!--原型链接-->
       <div class="download-style">
         <label class="project-name">原型链接</label>
-        <span class="project-name-content">
+        <span class="project-name-content-url">
           <div v-for="(item,index) in protoList" :key="index">
             <label>
               <i><img src="../../../assets/project_details_data/txt.png"></i>
-              <span>{{item.text}}</span>
+              <span @click="goWeb(item.text)">{{item.text}}</span>
               <!-- <input type="text" :disabled="item.isDisable" @blur="leaveOut(item)" v-model="item.fullFileAddress"> -->
             </label>
             <label class="btns">
@@ -72,11 +72,11 @@
       <!-- 设计图链接 -->
       <div class="download-style">
         <label class="project-name">设计图链接</label>
-        <span class="project-name-content">
+        <span class="project-name-content-url">
           <div v-for="(item,index) in designLinkList" :key="index">
             <label>
-              <!--<i><img src="../../assets/project_details_data/txt.png"></i>-->
-              <span>{{item.text}}</span>
+              <i><img src="../../../assets/project_details_data/txt.png"></i>
+              <span @click="goWeb(item.text)">{{item.text}}</span>
               <!-- <input type="text" :disabled="item.isDisable" @blur="leaveOut(item)" v-model="item.fullFileAddress"> -->
             </label>
             <label class="btns">
@@ -118,6 +118,9 @@
     },
     methods: {
       ...mapMutations([]),
+      goWeb (url) {
+        window.open(url)
+      },
       // 需求文档上传成功函数
       isDemand(response, file, fileList) {
         if (response.state == SUCCESS_OK) {
@@ -379,10 +382,64 @@
             }
             span {
               display: inline-block;
-              width: 10rem;
+              width: 14rem;
               overflow: hidden;
               text-overflow: ellipsis;
               white-space: nowrap;
+            }
+            label:last-child {
+              a {
+                color: #7e8c8d;
+                &:not(:last-child) {
+                  margin-right: 0.3rem;
+                }
+              }
+            }
+            i {
+              display: inline-block;
+              vertical-align: top;
+              margin-left: 10px;
+            }
+            input {
+              outline: none;
+              border: none;
+              width: 180px;
+              font-size: 16px;
+              background: #fafafa;
+            }
+          }
+        }
+        .project-name-content-url {
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-start;
+          align-items: center;
+          font-size: 16px;
+          color: #7e8c8d;
+          div {
+            min-width: 364px;
+            height: 47px;
+            line-height: 47px;
+            display: inline-block;
+            background-color: rgba(250, 250, 250, 1);
+            margin-right: 0.5rem;
+            margin-bottom: 5px;
+            color: #7e8c8d;
+            label {
+              margin-left: 5px;
+            }
+            label:last-child {
+              float: right;
+              padding: 0 20px;
+            }
+            span {
+              display: inline-block;
+              cursor: pointer;
+            }
+            span:hover {
+              color: #45B78D !important;
+              cursor: pointer;
+              text-decoration: underline;
             }
             label:last-child {
               a {

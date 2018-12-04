@@ -4,24 +4,24 @@
       <div class="detail">
         <div class="detail-row">
           <span class="keyword">项目名称：</span>
-          <span class="value">蓝莓App</span>
+          <span class="value">{{projectBaseInfo.name}}</span>
         </div>
         <div class="detail-row">
           <span class="keyword">项目时间：</span>
-          <span class="value">2018.01.02-2018.03.21</span>
+          <span class="value">{{projectBaseInfo.startTime}} — {{projectBaseInfo.endTime}}</span>
         </div>
         <div class="detail-row">
           <span class="keyword">项目经理：</span>
-          <span class="value">帅气小哥哥</span>
+          <span class="value">{{projectManager.userInfo.name}}</span>
         </div>
-        <div class="detail-row">
+        <!-- <div class="detail-row">
           <span class="keyword">项目预算：</span>
-          <span class="value">1000000.00元</span>
-          <!-- <div class="row-right">
+          <span class="value">{{projectBudgetList.amount}}</span>
+          <div class="row-right">
             <span class="keyword">项目奖金：</span>
             <span class="value">50000.00元</span>
-          </div> -->
-        </div>
+          </div>
+        </div> -->
         <!-- 附件列表 -->
         <!-- <div class="row-title annex">
           <div class="title">附件：</div>
@@ -42,20 +42,12 @@
         <div class="landmark">
           <div class="title">开发里程碑：</div>
           <div class="list">
-            <div class="list-item">
-              <div class="mark-title">开发里程碑1</div>
+            <div v-for="(item,index) in projectMilestoneList" :key="index" class="list-item">
+              <div class="mark-title">{{item.name}}</div>
               <div class="content">
-                <span>开始时间：2018年10月29日</span>
-                <span>开始时间：2018年10月29日</span>
-                <span>描述：这是某个app</span>
-              </div>
-            </div>
-            <div class="list-item">
-              <div class="mark-title">开发里程碑1</div>
-              <div class="content">
-                <span>开始时间：2018年10月29日</span>
-                <span>开始时间：2018年10月29日</span>
-                <span>描述：这是某个app</span>
+                <span>开始时间：{{item.startTime}}</span>
+                <span>结束时间：{{item.endTime}}</span>
+                <span>描述：{{item.detail}}</span>
               </div>
             </div>
           </div>
@@ -67,22 +59,54 @@
 
 <script>
   import common from "../../../utils/common";
-  import {
-    mapGetters,
-    mapMutations
-  } from 'vuex'
-  let vm;
+  const SUCCESS_OK = '200'
+  import { proProjectDetail } from '@/api/request'
+  import { mapGetters, mapMutations } from 'vuex'
+  let vm
   export default {
-    name: "personAdd",
     data() {
       return {
-        annexList: [1,2,3]
+        annexList: [],
+        projectBaseInfo: {},
+        projectBonusList: {},
+        projectBudgetList: {},
+        projectManager: {
+          userInfo: {
+            name: ''
+          }
+        },
+        projectIntro: {},
+        customer: {},
+        projectMilestoneList: []
       }
     },
-    mounted() {
-      vm = this;
+    computed: {
+      ...mapGetters(['getprojectId'])
     },
-    methods: {}
+    mounted() {
+      vm = this
+      this._proProjectDetail()
+    },
+    methods: {
+      _proProjectDetail () {
+        proProjectDetail({id: this.getprojectId}).then(res => {
+          res = res.data
+          const data = res.data
+          if (res.state == SUCCESS_OK) {
+            // console.log(data)
+            this.projectBaseInfo = data.projectBaseInfo
+            this.projectBonusList = data.projectBonusList.pop()
+            this.projectBudgetList = data.projectBudgetList.pop()
+            this.projectManager = data.projectManager
+            this.customer = data.customer
+            this.projectIntro = data.projectIntro
+            this.projectMilestoneList = data.projectMilestoneList
+          } else {
+            this.MessageError(res.message)
+          }
+        })
+      }
+    }
   }
 </script>
 
@@ -124,7 +148,7 @@
           }
           .value {
             letter-spacing: 1px;
-            color: #000;
+            color: #4D85B5;
           }
           .row-right {
             position: absolute;

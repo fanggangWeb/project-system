@@ -1,30 +1,23 @@
 <template>
   <div class="second-container">
-    <!-- <div class="header">
-      <el-input class="addPlan" size="small" placeholder="人员搜索" style="margin-right:10px" v-model="personName">
-      </el-input>
-      <el-select  style="margin-right:10px" size="small" v-model="job" clearable placeholder="岗位筛选">
-        <el-option v-for="(item, index) in jobList" :key="index" :label="item.name" :value="item.id">
-        </el-option>
-      </el-select>
-      <el-button size="small" type="success" class="hidenBtn" @click="showState = true">
-        导入表格
-      </el-button>
-      <el-button size="small" type="primary" style="margin-right:20px">导出表格</el-button>
-    </div> -->
     <div class="project-table">
       <el-table :header-cell-style="{background:'#FAFAFA',textAlign: 'center'}"  :data="personList" :stripe="true" style="width: 100%">
         <el-table-column type="index" align="center" label="序号" width="60">
         </el-table-column>
-        <el-table-column prop="name" label="名字" style="width: 20%">
+        <el-table-column prop="name" label="名字" align="center">
         </el-table-column>
-        <el-table-column prop="job" label="岗位" style="width: 20%">
+        <el-table-column prop="position" label="岗位" align="center">
         </el-table-column>
-        <el-table-column prop="salary" label="薪资" style="width: 20%">
+        <!-- <el-table-column prop="salaryMonth" label="薪资" align="center">
+        </el-table-column> -->
+        <el-table-column prop="positive" align="center" label="转正情况">
+          <template slot-scope="scope">
+            <span>{{positiveFil[scope.row.positive]}}</span>
+          </template>
         </el-table-column>
         <el-table-column align="center" label="薪资比例（百分数）">
           <template slot-scope="scope">
-            <el-input-number v-model="scope.row.num" @change="handleChange" :min="80" :max="120" label="描述文字">%</el-input-number>
+            <el-input-number v-model="scope.row.performance" @change="handleChange" :min="80" :max="120" label="描述文字">%</el-input-number>
             <!-- <el-button type="primary" size="small" @click="detailGo(scope.row)">详情</el-button>
             <el-button type="danger" size="small" @click="delPerson(scope.row)">删除</el-button> -->
           </template>
@@ -32,7 +25,7 @@
       </el-table>
     </div>
     <div class="project-paging">
-      <el-button type="primary">提交</el-button>
+      <el-button type="primary" @click="confirm">提交</el-button>
       <!-- <el-pagination background layout="prev, pager, next" 
       :page-size="size" @current-change="handleCurrentChange"
       :current-page.sync="page"
@@ -44,26 +37,21 @@
 <script>
   let vm
   import { mapGetters, mapMutations } from 'vuex'
-  import { groupMemberList } from '@/api/request'
+  import { groupMemberNoPage, insertSalary } from '@/api/request'
+  const SUCCESS_OK = '200'
   export default {
     data() {
       return {
-        jobList: [],
-        job: '',
         num1: 1,
         showState: false,
-        personName: '',
-        otherUsers: [],
-        userId: '',
-        personList: [{num:80},{num:88}], // 人员列表
+        personList: [], // 人员列表
         moduleState: false,
-        downUrl: '',
-        moduleInput: '',
-        form: {
-          name: ''
-        },
         page: 1,
         size: 10,
+        positiveFil: {
+          '0': '未转正',
+          '1': '已转正'
+        },
         totalElements: 10
       }
     },
@@ -72,13 +60,14 @@
     },
     mounted() {
       vm = this
+      this._groupMemberNoPage()
     },
     methods: {
       ...mapMutations([]),
       handleChange () {},
-      handleCurrentChange() {
-        console.log(this.page)
-      },
+      // handleCurrentChange() {
+      //   console.log(this.page)
+      // },
       // 获取下载模板
       downTem() {
       },
@@ -86,6 +75,36 @@
         return {
           projectsId: this.getprojectId
         }
+      },
+      confirm () {
+        this.$confirm('确认提交人员薪资吗？', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          insertSalary(this.personList).then(res => {
+            res = res.data
+            if (res.state == SUCCESS_OK) {
+              this.MessageSuccess(res.message)
+              this._groupMemberNoPage()
+            } else {
+              this.MessageError(res.message)
+            }
+          })
+        }).catch(() => {});
+      },
+      _groupMemberNoPage () {
+        groupMemberNoPage().then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            for (let i = 0; i < res.data.length; i++) {
+              res.data[i].performance = 100
+            }
+            this.personList = res.data
+          } else {
+            this.MessageError(res.message)
+          }
+        })
       },
       detailGo (item) {
         this.$router.push('/home/staffDetail')
@@ -132,6 +151,8 @@
     }
     .project-table {
       padding: 20px 20px 0 20px;
+      max-height: 630px;
+      overflow-y: auto;
     }
     .project-paging {
       text-align: center;

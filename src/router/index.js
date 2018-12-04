@@ -54,6 +54,9 @@ export const proSupervisor = [ // 项目主管
     path: 'superPerson',
     name: '人员'
   }, {
+    path: 'superApproval',
+    name: '审批'
+  }, {
     path: 'superDynamic',
     name: '动态'
   }
@@ -135,11 +138,6 @@ export const mainRoute = {
     noShow: true,
     component: _import('proManager/approval/daytask-detail')
   }, {
-    path: 'release',
-    name: '发布动态',
-    noShow: true,
-    component: _import('proManager/dynamic/release')
-  }, {
     path: 'person',
     name: '人员',
     component: _import('proManager/person/index'),
@@ -151,28 +149,20 @@ export const mainRoute = {
       path: 'staffSalary',
       name: '薪资',
       component: _import('proManager/person/staff-salary')
+    }, {
+      path: 'timeAdd',
+      name: '工作时间补全',
+      component: _import('proManager/person/time-add')
     }]
   }, {
     path: 'dynamic',
     name: '动态',
-    component: _import('proManager/dynamic/index'),
-    children: [{
-      path: '/',
-      name: '公司动态',
-      component: _import('proManager/dynamic/company')
-    }, {
-      path: 'project',
-      name: '项目动态',
-      component: _import('proManager/dynamic/project')
-    }, {
-      path: 'staff',
-      name: '人员动态',
-      component: _import('proManager/dynamic/staff')
-    }, {
-      path: 'detail',
-      name: '动态详情',
-      component: _import('proManager/dynamic/detail')
-    }]
+    component: _import('proManager/dynamic/index')
+  }, {
+    path: 'release',
+    name: '发布动态',
+    noShow: true,
+    component: _import('proManager/dynamic/release')
   }, {
     path: 'projectDetail',
     name: '项目详情',
@@ -264,6 +254,15 @@ export const mainRoute = {
       component: _import('orStaff/project/project-complete')
     }]
   }, {
+    path: 'orDynamic',
+    name: '动态',
+    component: _import('orStaff/dynamic/index')
+  }, {
+    path: 'orRelease',
+    name: '发布动态',
+    noShow: true,
+    component: _import('orStaff/dynamic/release')
+  }, {
     path: 'orSocre',
     name: '普通员工评分',
     component: _import('orStaff/score/index')
@@ -302,6 +301,22 @@ export const mainRoute = {
     name: '项目主管人员',
     component: _import('proSupervisor/person/index')
   }, {
+    path: 'superApproval',
+    name: '项目主管审批',
+    component: _import('proSupervisor/approval/index')
+  }, {
+    path: 'superDynamic',
+    name: '项目主管动态',
+    component: _import('proSupervisor/dynamic/index')
+  }, {
+    path: 'superRelease',
+    name: '项目主管发布动态',
+    component: _import('proSupervisor/dynamic/release')
+  }, {
+    path: 'superPersonDetail',
+    name: '项目主管人员详情',
+    component: _import('proSupervisor/person/detail')
+  }, {
     // 以下是商务主管的路由
     path: 'busSuperfeedback',
     name: '商务主管反馈',
@@ -314,6 +329,10 @@ export const mainRoute = {
     path: 'busSuperDynamic',
     name: '商务主管动态',
     component: _import('busSupervisor/dynamic/index')
+  }, {
+    path: 'busSuperRelease',
+    name: '商务主管发布动态',
+    component: _import('busSupervisor/dynamic/release')
   }, {
     path: 'busSuperfeedbackDetail',
     name: '商务主管反馈详情',
@@ -336,6 +355,10 @@ export const mainRoute = {
     name: '业务员动态',
     component: _import('business/dynamic/index')
   }, {
+    path: 'busRelease',
+    name: '业务员发布动态',
+    component: _import('business/dynamic/release')
+  }, {
     // 以下是人事的路由
     path: 'perPerson',
     name: '人事人员',
@@ -353,6 +376,10 @@ export const mainRoute = {
     name: '人事绩效',
     component: _import('personnel/performance/index')
   }, {
+    path: 'access',
+    name: '人事考核',
+    component: _import('personnel/access/index')
+  }, {
     // 设计主管的路由
     path: 'assign',
     name: '分配',
@@ -369,6 +396,10 @@ export const mainRoute = {
     path: 'superDesDynamic',
     name: '动态',
     component: _import('superDesign/dynamic/index')
+  }, {
+    path: 'superDesRelease',
+    name: '发布动态',
+    component: _import('superDesign/dynamic/release')
   }]
 }
 stateRoute.push(mainRoute)

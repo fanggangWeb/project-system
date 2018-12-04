@@ -1,12 +1,12 @@
 <template>
   <div class="index">
     <div class="head">{{type}}
-      <span>
-          <a href="#" style="padding-right: 17px" @click.prevent="prev" v-if="isFirst>0">
-            上一条
-          </a>
-          <a href="#"  @click.prevent="next" v-if="isLast>0">下一条</a>
-        </span>
+      <!-- <span>
+        <a href="#" style="padding-right: 17px" @click.prevent="prev" v-if="isFirst>0">
+          上一条
+        </a>
+        <a href="#"  @click.prevent="next" v-if="isLast>0">下一条</a>
+      </span> -->
     </div>
     <div class="content">
       <div class="title-con">
@@ -18,21 +18,21 @@
       <hr style="margin-top: 5px;border: 1px rgba(237,237,237,1) solid" />
     </div>
     <div class="foot">
-      <span v-if="nextStatus !== '没有下一条了'" @click="next()">下一条{{nextStatus | readStatus}}：{{nextTitle}}</span>
+      <!-- <span v-if="nextStatus !== '没有下一条了'" @click="next()">下一条{{nextStatus | readStatus}}：{{nextTitle}}</span>
       <span v-if="nextStatus === '没有下一条了'">下一条:{{nextStatus}}</span>
       <span>
           <a href="" style="padding-right: 17px" @click.prevent="prev" v-if="isFirst>0">上一条</a>
           <a  href=""  @click.prevent="next"  v-if="isLast>0">下一条</a>
-        </span>
+        </span> -->
     </div>
   </div>
 </template>
 
 <script>
   let vm
-  import {
-    mapGetters
-  } from 'vuex'
+  import { adviceDetail } from '@/api/request'
+  const SUCCESS_OK = '200'
+  import { mapGetters } from 'vuex'
   export default {
     data() {
       return {
@@ -44,11 +44,11 @@
         nextStatus: '',
         prevDynamic: '',
         nextDynamic: '',
-        type: '公司动态'
+        type: '动态详情'
       }
     },
     computed: {
-      ...mapGetters([])
+      ...mapGetters(['getadviceId'])
     },
     filters: {
       readStatus(item) {
@@ -66,17 +66,16 @@
         return type
       }
     },
-    mounted() {
+    mounted () {
       vm = this
     },
     methods: {
+      _adviceDetail () {
+        adviceDetail({id})
+      },
       prev() {
-        let id = vm.prevDynamic.content[0].id;
-        vm.detailedInformation(id);
       },
       next() {
-        let id = vm.nextDynamic.content[0].id;
-        vm.detailedInformation(id);
       }
     }
   }

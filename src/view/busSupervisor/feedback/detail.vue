@@ -7,26 +7,30 @@
       <el-date-picker class="timeSearch"
         v-model="searchTime"
         type="date"
+        @change="timeSearch"
+        value-format="yyyy-MM-dd"
         placeholder="项目开始日期">
       </el-date-picker>
     </div>
     <div class="content">
       <div class="top">
-        <div class="name">项目名称：蓝莓APP</div>
-        <div class="customer">项目客户：某某某</div>
-        <div class="customer">跟进人员：某某某</div>
+        <div class="name">项目名称：{{projectInfo.name}}</div>
+        <div class="customer">项目客户：{{projectInfo.customer.customerName}}</div>
+        <div class="customer">跟进人员：
+          <span v-for="(item,index) in projectInfo.salesPersons" :key="index">&nbsp;{{item.name}}</span>
+        </div>
       </div>
       <div class="bottom">
-        测试昆仑山地方大事发生开发的是否打开拉萨附近昆仑山地方开了房间打扫理发师开发 发生的克劳福德罗斯福独守空房 士大夫昆仑山分解为哦分就爱上了对方开价
+        {{projectInfo.demandDesc}}
       </div>
     </div>
     <div class="project-table">
       <el-table :header-cell-style="{textAlign: 'center'}"  :data="list" style="width:100%">
         <el-table-column type="index" align="center" label="序号" width="60">
         </el-table-column>
-        <el-table-column prop="time" label="跟进时间" width="180" align="center">
+        <el-table-column prop="updateTime" label="跟进时间" width="180" align="center">
         </el-table-column>
-        <el-table-column prop="desc" label="跟进详情">
+        <el-table-column prop="record" label="跟进详情" align="center">
         </el-table-column>
       </el-table>
     </div>
@@ -41,7 +45,8 @@
 </template>
 
 <script>
-  let vm
+  const SUCCESS_OK = '200'
+  import { saleTaskDetail, saleTaskDetailList } from '@/api/request'
   import { mapGetters, mapMutations } from 'vuex'
   export default {
     data() {
@@ -52,14 +57,57 @@
         list: [{time: '2018-09-10', desc: ''}],
         status: {},
         totalElements: 10,
-        projectName: '',
+        projectInfo: {
+          customer: {
+            customerName: ''
+          }
+        },
       }
     },
-    mounted() {},
+    computed: {
+      ...mapGetters(['getprojectId'])
+    },
+    mounted() {
+      this._saleTaskDetail()
+      this._saleTaskDetailList()
+    },
     methods: {
       ...mapMutations(['projectId']),
-      handleCurrentChange() {
-        console.log(this.page)
+      _saleTaskDetail () {
+        saleTaskDetail({id: this.getprojectId}).then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            this.projectInfo = res.data
+          } else {
+            this.MessageError(res.message)
+          }
+        })
+      },
+      timeSearch () {
+        if (this.searchTime == null) {
+          this.searchTime = ''
+        }
+        this._saleTaskDetailList()
+      },
+      _saleTaskDetailList () {
+        const data = {
+          page: this.page,
+          size: this.size,
+          saleTaskId: this.getprojectId,
+          cheduleTime: this.searchTime
+        }
+        saleTaskDetailList(data).then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            this.list = res.data.rows
+            this.totalElements = res.data.total
+          } else {
+            this.MessageError(res.message)
+          }
+        })
+      },
+      handleCurrentChange () {
+        this._saleTaskDetail()
       }
     }
   }

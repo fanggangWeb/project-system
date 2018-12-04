@@ -1,17 +1,10 @@
 <template>
   <div class="container">
-    <div class="header">首页&nbsp;>&nbsp;人员&nbsp;>&nbsp;人员详情</div>
+    <div class="header">首页&nbsp;>&nbsp;<router-link to="/home/superDesPerson">人员</router-link>&nbsp;>&nbsp;人员详情</div>
     <div class="nav">
-      <span class="span icon_user">姓名：柴方刚{{userInfo.name}}</span>
-      <span class="span icon_user">岗位：IOS工程师</span>
-      <span class="span icon_user">转正情况：已转正</span>
-      <!-- <span class="span icon_user">转正情况：{{userInfo.entryStatus == 'POSITIVE'? '已转正':'未转正'}}</span> -->
-      <!-- <el-button size="mini" type="success" v-if="userInfo.entryStatus != 'POSITIVE'">
-        <router-link to="/changeStatus" class="color_white">修改</router-link>
-      </el-button> -->
-      <!-- <el-button size="mini" type="primary">
-        <router-link to="/rating" class="color_white">评分</router-link>
-      </el-button> -->
+      <span class="span icon_name">姓名：{{userInfo.name}}</span>
+      <span class="span icon_user">岗位：{{userInfo.position}}</span>
+      <span class="span icon_user">转正情况：{{userInfo.positive == 1?'已转正':'未转正'}}</span>
     </div>
     <div class="tables1">
       <table class="tables1_t">
@@ -20,21 +13,21 @@
           <td width="16%" class="td1">{{userInfo.position}}</td>
           <td width="16%" class="td2">本月出勤天数</td>
           <td width="16%" class="td1">{{attendance.attendanceDays}}</td>
-          <td width="16%" class="td2">本月请假天数</td>
-          <td width="16%" class="td1">{{attendance.casualLeaveDays}}</td>
+          <td width="16%" class="td2">本月打卡次数</td>
+          <td width="16%" class="td1">{{attendance.attendanceCount}}</td>
         </tr>
         <tr>
           <td class="td2">薪资</td>
-          <td class="td1">{{userInfo.salary}}</td>
+          <td class="td1">{{userInfo.salaryMonth}}</td>
           <td class="td2">本月加班天数</td>
-          <td class="td1">{{attendance.overtimeNum}}</td>
+          <td class="td1">{{attendance.overTimeDays}}</td>
           <td class="td2">本月加班时长</td>
-          <td class="td1">{{attendance.overTime}}</td>
+          <td class="td1">{{attendance.overTimeHours}}</td>
         </tr>
       </table>
     </div>
     <div class="tables2">
-      <div class="project-content">
+      <!-- <div class="project-content">
         <div class="project-top">
           <div class="project-top-up">100</div>
           <div class="project-top-under"><img src="../../../assets/project-statistics-slices/projectNumber.png"> 本月参加任务</div>
@@ -51,60 +44,46 @@
           <div class="project-top-up">100</div>
           <div class="project-top-under"><img src="../../../assets/project-statistics-slices/hangInTheAir.png"> 本月超期任务</div>
         </div>
-      </div>
-      <!-- <div class="hr">
-        <hr width="90%" style="margin-top:15px;border:1px dashed #e3e3e3; height:1px">
       </div> -->
-      <div class="task-sub">
-        <table class="tables3">
-          <thead>
-            <tr class="tables3_tr">
-              <td width="16%">任务名称</td>
-              <td width="16%">开始时间</td>
-              <td width="16%">结束时间</td>
-              <td width="16%">所属项目</td>
-              <td width="16%">优先级</td>
-              <td width="16%">状态</td>
-            </tr>
-          </thead>
-          <tbody>
-            <tr class="tables3_tr">
-              <tr v-for="(item,index) in subTask" :key="index">
-                <td>{{item.tasksName}}</td>
-                <td>{{item.startingTime}}</td>
-                <td>{{item.estimatedEndTime}}</td>
-                <td>{{item.projectName}}</td>
-                <td>{{item.priority}}</td>
-                <td>{{item.status}}</td>
-              </tr>
-          </tbody>
-        </table>
-        <div class="paging">
-          <el-pagination background layout="prev, pager, next" :current-page="page" :page-size="size" :total="total" @current-change="currentChange">
-          </el-pagination>
-        </div>
+      <div class="project-table">
+        <el-table :header-cell-style="{background:'#FAFAFA',textAlign: 'center'}"  :data="taskList" :stripe="true" style="width: 100%">
+          <el-table-column type="index" align="center" label="序号" width="60">
+          </el-table-column>
+          <el-table-column prop="projectBaseInfo.name" align="center" label="项目名称">
+          </el-table-column>
+          <el-table-column prop="projectBaseInfo.startTime" align="center" label="开始时间">
+          </el-table-column>
+          <el-table-column prop="projectBaseInfo.endTime" align="center" label="结束时间">
+          </el-table-column>
+          <el-table-column prop="projectManager.userInfo.name" align="center" label="项目经理">
+          </el-table-column>
+          <el-table-column prop="projectStatus.text" align="center" label="项目状态">
+          </el-table-column>
+        </el-table>
+      </div>
+      <div class="paging">
+        <el-pagination background layout="prev, pager, next" :current-page="page" :page-size="size" :total="total" @current-change="currentChange">
+        </el-pagination>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-  let vm;
-  import {
-    mapGetters,
-    mapMutations
-  } from 'vuex'
+  let vm
+  import { mapGetters, mapMutations } from 'vuex'
+  const SUCCESS_OK = '200'
+  import { attendanceInfo, staffUserInfo, designDetailList } from '@/api/request'
   export default {
     data() {
       return {
-        userInfo: new Object(),
-        attendance: new Object(),
-        task: new Object(),
-        otherInfo: new Object(),
-        subTask: new Array(),
+        userInfo: {},
+        attendance: {},
+        task: {},
+        taskList: [],
         page: 1,
-        size: 4,
-        total: 10
+        size: 6,
+        total: 0
       }
     },
     filters: {
@@ -114,48 +93,54 @@
     },
     mounted() {
       vm = this
-      // vm.getPersonInfo()
-      // vm.getThisMonthTasks()
+      this._attendanceInfo()
+      this._staffUserInfo()
+      this._designDetailList()
     },
     computed: {
-      ...mapGetters([])
+      ...mapGetters(['getstaffId'])
     },
     methods: {
-      ...mapMutations(['entryStatus', 'name', 'position', 'level']),
-      // 获取人员信息(任务，考勤，基本信息)
-      getPersonInfo() {
-        let req = new Object();
-        // req.userId = vm.id;
-        req.userId = vm.getuserId
-        vm.axios.post(vm.urlApi.getPersonInfo, req).then(res => {
-          if (res.code == 0) {
-            // console.log(res)
-            vm.userInfo = res.data.userInfo;
-            vm.task = res.data.task;
-            vm.attendance = res.data.attendance;
-            vm.entryStatus(vm.userInfo.entryStatus)
-            vm.name(vm.userInfo.name)
-            vm.position(vm.userInfo.position)
-            vm.level(vm.userInfo.salaryLevel)
+      ...mapMutations([]),
+      // 出勤信息
+      _attendanceInfo () {
+        attendanceInfo({id: this.getstaffId}).then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            this.attendance = res.data
+          } else {
+            this.MessageError(res.message)
           }
         })
       },
-      // 获取子任务信息
-      getThisMonthTasks() {
-        let req = new Object();
-        req.page = vm.page;
-        req.size = vm.size;
-        req.userId = vm.getuserId;
-        vm.axios.post(vm.urlApi.getThisMonthTasks, req).then(res => {
-          // console.log(res)
-          if (res && res.code === 0) {
-            vm.subTask = res.data.content;
-            vm.total = res.data.totalElements
+      // 个人信息
+      _staffUserInfo () {
+        staffUserInfo({id: this.getstaffId}).then(res => {
+          res = res.data
+          if (res.state = SUCCESS_OK) {
+            this.userInfo = res.data
+          } else {
+            this.MessageError(res.message)
           }
         })
       },
-      currentChange(page) {
-        vm.page = page
+      // 任务列表
+      _designDetailList () {
+        const data = {
+          page: this.page,
+          size: this.size,
+          userId: this.getstaffId
+        }
+        designDetailList(data).then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            this.taskList = res.data.rows
+            this.total = res.data.total
+          }
+        })
+      },
+      currentChange() {
+        this._designDetailList()
       }
     }
   }
@@ -180,16 +165,20 @@
     }
     .nav {
       background: rgba(255, 255, 255, 1);
+      height: 65px;
       width: calc(100% - 40px);
-      line-height: 82px;
+      line-height: 65px;
       text-align: left;
       margin: 10px 20px;
       color: #4D4D4D;
-      font-size: 18px;
+      font-size: 17px;
       box-sizing: border-box;
       .span {
         margin-right: 45px;
         padding-left: 20px;
+      }
+      .icon_name {
+        margin-left: 35px;
       }
       .color_white {
         color: white;
@@ -208,6 +197,8 @@
           background: #fcfcfc;
           border: 2px solid #f6f6f6;
           height: 90px;
+          line-height: 90px;
+          color:#848484;
         }
         .td2 {
           height: 100%;
@@ -220,7 +211,7 @@
     .tables2 {
       width: calc(100% - 40px);
       margin: 10px 20px;
-      height: 50%;
+      height: 54.2%;
       background: rgba(255, 255, 255, 1);
       box-shadow: 7px 12px 21px rgba(162, 160, 160, 0.05);
       .project-content {
@@ -233,8 +224,10 @@
           text-align: center;
           width: 23.1%;
           height: 150px;
+          margin-right: 80px;
           background: rgba(255, 255, 255, 1);
           border-radius: 4px;
+          border-left: 1px #fff7f7 solid;
           box-shadow: 7px 12px 21px rgba(162, 160, 160, 0.05);
           .project-top-up {
             font-size: 60px;
@@ -244,39 +237,32 @@
           .project-top-under {
             font-size: 16px;
             color: rgba(171, 171, 171, 1);
-            line-height: 80px;
+            line-height: 60px;
             img {
               position: relative;
               top: 1px;
             }
           }
         }
-      }
-      .tables3 {
-        width: 100%;
-        line-height: 41px;
-        margin-left: 44px;
-        text-align: center;
-        margin-top: 41px;
-        padding-top: 29rem;
-        background: #f3f3f3;
-        td {
-          height: 50px;
-          line-height: 50px;
-          font-size: 14px;
+        .project-top:first-child {
+          margin-left: 80px;
         }
+        .project-top:last-child {
+          margin-right: 0px;
+        }
+      }
+      .project-table {
+        padding: 20px 30px 0px 30px;
+        max-height: 300px;
+        overflow-y: auto;
+      }
+      .paging {
+        text-align: center;
+        margin-top: 10px;
       }
     }
     .hr {
       margin-left: 55px;
-    }
-    .task-sub {
-      // width:60% ;
-      width: 90%;
-      .paging {
-        margin: 20px auto;
-        text-align: center;
-      }
     }
   }
 </style>

@@ -1,281 +1,291 @@
 <template>
   <div class="container">
-    <div class="header">首页&nbsp;>&nbsp;人员&nbsp;>&nbsp;人员详情</div>
-    <div class="nav">
-      <span style="margin-left:35px" class="span icon_user">姓名：柴方刚{{userInfo.name}}</span>
-      <span class="span icon_user">岗位：IOS工程师</span>
-      <span class="span icon_user">转正情况：已转正</span>
-      <!-- <span class="span icon_user">转正情况：{{userInfo.entryStatus == 'POSITIVE'? '已转正':'未转正'}}</span> -->
-      <!-- <el-button size="mini" type="success" v-if="userInfo.entryStatus != 'POSITIVE'">
-        <router-link to="/changeStatus" class="color_white">修改</router-link>
-      </el-button> -->
-      <!-- <el-button size="mini" type="primary">
-        <router-link to="/rating" class="color_white">评分</router-link>
-      </el-button> -->
+    <div class="header">
+      <div class="path_text">首页&nbsp;>&nbsp;<router-link to="/home/perPerson">人员</router-link>&nbsp;>&nbsp;详情</div>
     </div>
-    <div class="tables1">
-      <table class="tables1_t">
+    <div class="manager_msg">
+      <ul>
+        <li><span class="img-con"><img src="../../../assets/id.png"/></span> 账号：<span class="content">{{content.mobile}}</span></li>
+        <!-- <li><span class="img-con"><img src="../../../assets/pwd.png" /></span>密码：<span class="content pwd">*******</span></li> -->
+        <li><span class="img-con"><img src="../../../assets/name.png" /></span>姓名：<span class="content">{{content.name}}</span></li>
+        <li v-if="roleShow"><span class="img-con"><img src="../../../assets/level.png" /></span>积分等级：<span class="content" v-if="content.projectManagerIntegral">{{content.projectManagerIntegral.integralGrade.name}}</span></li>
+        <li v-if="roleShow"><span class="img-con"><img src="../../../assets/integral.png" /></span>积分累积：<span class="content" v-if="content.projectManagerIntegral">{{content.projectManagerIntegral.integral}}</span></li>
+        <li>
+          <!-- <button class="btn1" @click="seeDetails">详情</button> -->
+          <!-- <button class="btn">升级</button> -->
+        </li>
+      </ul>
+    </div>
+    <div class="table">
+      <table class="tables">
         <tr>
-          <td width="16%" class="td2">岗位</td>
-          <td width="16%" class="td1">{{userInfo.position}}</td>
-          <td width="16%" class="td2">本月出勤天数</td>
-          <td width="16%" class="td1">{{attendance.attendanceDays}}</td>
-          <td width="16%" class="td2">本月请假天数</td>
-          <td width="16%" class="td1">{{attendance.casualLeaveDays}}</td>
+          <td class="cow1">岗位</td>
+          <td class="cow2 cow2_botton">{{content.position}}</td>
+          <td class="cow1">工资卡开户行</td>
+          <td class="cow2 cow2_botton"><span>{{content.userRoster.accountBank}}</span></td>
+          <td class="cow1">工资卡号</td>
+          <td class="cow2 cow2_botton"><span>{{content.userRoster.bankAccountNo}}</span></td>
         </tr>
         <tr>
-          <td class="td2">薪资</td>
-          <td class="td1">{{userInfo.salary}}</td>
-          <td class="td2">本月加班天数</td>
-          <td class="td1">{{attendance.overtimeNum}}</td>
-          <td class="td2">本月加班时长</td>
-          <td class="td1">{{attendance.overTime}}</td>
+          <td class="cow1">薪资</td>
+          <td class="cow2 cow2_botton">{{content.salaryMonth}}</td>
+          <td class="cow1">状态</td>
+          <td class="cow2 cow2_botton"><span v-if="content.userStatus!=null">{{content.userStatus.isFree ? '空闲中' : '忙碌中'}}</span></td>
+          <td class="cow1">入职时间</td>
+          <td class="cow2 cow2_botton">{{content.hiredDate}}</td>
+        </tr>
+        <tr>
+          <td class="cow1">社保号</td>
+          <td class="cow2 cow2_botton">{{content.userRoster.personalSi}}</td>
+          <td class="cow1">工号</td>
+          <td class="cow2 cow2_botton">{{content.jobnumber}}</td>
+          <td class="cow1">身份证号</td>
+          <td class="cow2 cow2_botton">{{content.userRoster.certNo}}</td>
+        </tr>
+        <tr>
+          <td class="cow1">转正时间</td>
+          <td class="cow2">{{content.userRoster.regularTime}}</td>
+          <td class="cow1">联系电话</td>
+          <td class="cow2">{{content.mobile}}</td>
+          <td class="cow1">登录密码</td>
+          <td class="cow2">
+            <button class="modify_button" @click="dialogShowState = true">修改</button>
+          </td>
         </tr>
       </table>
+      <!-- <el-button type="success" style="margin-top:20px">晋升申请</el-button> -->
     </div>
-    <div class="tables2">
-      <div class="project-content">
-        <div class="project-top">
-          <div class="project-top-up">100</div>
-          <div class="project-top-under"><img src="../../../assets/project-statistics-slices/projectNumber.png"> 本月参加任务</div>
-        </div>
-        <div class="project-top">
-          <div class="project-top-up">100</div>
-          <div class="project-top-under"><img src="../../../assets/project-statistics-slices/haveInHand.png"> 本月收到任务</div>
-        </div>
-        <div class="project-top">
-          <div class="project-top-up">100</div>
-          <div class="project-top-under"><img src="../../../assets/project-statistics-slices/complete.png"> 本月完成任务</div>
-        </div>
-        <div class="project-top">
-          <div class="project-top-up">100</div>
-          <div class="project-top-under"><img src="../../../assets/project-statistics-slices/hangInTheAir.png"> 本月超期任务</div>
-        </div>
-      </div>
-      <!-- <div class="hr">
-        <hr width="90%" style="margin-top:15px;border:1px dashed #e3e3e3; height:1px">
-      </div> -->
-      <div class="task-sub">
-        <table class="tables3">
-          <thead>
-            <tr class="tables3_tr">
-              <td width="16%">任务名称</td>
-              <td width="16%">开始时间</td>
-              <td width="16%">结束时间</td>
-              <td width="16%">所属项目</td>
-              <td width="16%">优先级</td>
-              <td width="16%">状态</td>
-            </tr>
-          </thead>
-          <tbody>
-            <tr class="tables3_tr">
-              <tr v-for="(item,index) in subTask" :key="index">
-                <td>{{item.tasksName}}</td>
-                <td>{{item.startingTime}}</td>
-                <td>{{item.estimatedEndTime}}</td>
-                <td>{{item.projectName}}</td>
-                <td>{{item.priority}}</td>
-                <td>{{item.status}}</td>
-              </tr>
-          </tbody>
-        </table>
-        <div class="paging">
-          <el-pagination background layout="prev, pager, next" :current-page="page" :page-size="size" :total="total" @current-change="currentChange">
-          </el-pagination>
-        </div>
-      </div>
-    </div>
+    <el-dialog :visible.sync="dialogShowState" width="30%" :close-on-click-modal="false" center>
+      <el-form :model="ruleForm" status-icon :rules="rules" ref="ruleForm" label-width="100px" class="demo-ruleForm">
+        <el-form-item label="密码" prop="pass">
+          <el-input type="password" v-model="ruleForm.pass" autocomplete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="确认密码" prop="checkPass">
+          <el-input type="password" v-model="ruleForm.checkPass" autocomplete="off"></el-input>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="submitForm('ruleForm')">提交</el-button>
+          <el-button @click="resetForm('ruleForm')">重置</el-button>
+        </el-form-item>
+      </el-form>
+    </el-dialog>
   </div>
 </template>
-
 <script>
+  import { staffUserInfo, modifyPassword } from '@/api/request'
+  import { mapMutations, mapGetters } from 'vuex'
   let vm;
-  import {
-    mapGetters,
-    mapMutations
-  } from 'vuex'
   export default {
+    name: "information",
     data() {
+      var validatePass = (rule, value, callback) => {
+        if (value === '') {
+          callback(new Error('请输入密码'));
+        } else {
+          if (this.ruleForm.checkPass !== '') {
+            this.$refs.ruleForm.validateField('checkPass');
+          }
+          callback();
+        }
+      }
+      var validatePass2 = (rule, value, callback) => {
+        if (value === '') {
+          callback(new Error('请再次输入密码'));
+        } else if (value !== this.ruleForm.pass) {
+          callback(new Error('两次输入密码不一致!'));
+        } else {
+          callback();
+        }
+      }
       return {
-        userInfo: new Object(),
-        attendance: new Object(),
-        task: new Object(),
-        otherInfo: new Object(),
-        subTask: new Array(),
-        page: 1,
-        size: 4,
-        total: 10
+        content: {
+          userRoster: {
+            accountBank: '',
+            bankAccountNo: ''
+          },
+          userStatus: {
+            isFree: ''
+          }
+        },
+        levelName: '',
+        roleShow: false,
+        dialogShowState: false,
+        ruleForm: {
+          pass: '',
+          checkPass: ''
+        },
+        rules: {
+          pass: [{ validator: validatePass, trigger: 'blur' }],
+          checkPass: [{ validator: validatePass2, trigger: 'blur' }]
+        }
       }
-    },
-    filters: {
-      translate(item, map) {
-        return map[item]
-      }
-    },
-    mounted() {
-      vm = this
-      // vm.getPersonInfo()
-      // vm.getThisMonthTasks()
     },
     computed: {
-      // ...mapGetters(['getstaffId'])
+      ...mapGetters(['getrole', 'getstaffId'])
+    },
+    mounted() {
+      vm = this;
+      this.getCurrentPersionInfo()
+    },
+    watch: {
+      dialogShowState: function(val, oldval) {
+        if (val == false) {
+          this.$refs['ruleForm'].resetFields()
+        }
+      }
     },
     methods: {
-      ...mapMutations([]),
-      // 获取人员信息(任务，考勤，基本信息)
-      getPersonInfo() {
-        let req = new Object();
-        // req.userId = vm.id;
-        req.userId = vm.getuserId
-        vm.axios.post(vm.urlApi.getPersonInfo, req).then(res => {
-          if (res.code == 0) {
-            // console.log(res)
-            vm.userInfo = res.data.userInfo;
-            vm.task = res.data.task;
-            vm.attendance = res.data.attendance;
-            vm.entryStatus(vm.userInfo.entryStatus)
-            vm.name(vm.userInfo.name)
-            vm.position(vm.userInfo.position)
-            vm.level(vm.userInfo.salaryLevel)
+      // 获取个人信息
+      getCurrentPersionInfo () {
+        staffUserInfo({id: this.getstaffId}).then(res => {
+          res = res.data
+          // this.$store.getters.getrole === 'PROJECT_MANAGER' ? this.roleShow = true : this.roleShow = false
+          if (res.state === 200) {
+            res.data.position == '项目经理' ? this.roleShow = true : this.roleShow = false
+            this.content = res.data
+          } else {
+            this.MessageError(res.message)
           }
         })
       },
-      // 获取子任务信息
-      getThisMonthTasks() {
-        let req = new Object();
-        req.page = vm.page;
-        req.size = vm.size;
-        req.userId = vm.getuserId;
-        vm.axios.post(vm.urlApi.getThisMonthTasks, req).then(res => {
-          // console.log(res)
-          if (res && res.code === 0) {
-            vm.subTask = res.data.content;
-            vm.total = res.data.totalElements
+      // 修改密码
+      submitForm(formName) {
+        this.$refs[formName].validate((valid) => {
+          if (valid) {
+            modifyPassword({ password: this.ruleForm.pass }).then(res => {
+              res = res.data
+              if (res.state === 200) {
+                this.MessageSuccess(res.message)
+                this.dialogShowState = false
+              } else {
+                this.MessageError(res.message)
+              }
+            })
+          } else {
+            console.log('error submit!!')
+            return false;
           }
-        })
+        });
       },
-      currentChange(page) {
-        vm.page = page
+      resetForm(formName) {
+        this.$refs[formName].resetFields()
       }
     }
   }
 </script>
 
-<style lang="less" type="text/less" scoped>
+<style lang="less" scoped>
   .container {
-    height: 100%;
     width: 100%;
-    overflow-x: hidden;
-    background: #FAFBFD;
+    height: 100%;
+    background: #fafbfc;
     .header {
-      color: #4d4d4d;
-      font-size: 22px;
-      line-height: 70px;
-      text-align: left;
-      padding-left: 30px;
       width: 100%;
       height: 70px;
       background: rgba(244, 246, 247, 1);
-      box-sizing: border-box;
-    }
-    .nav {
-      background: rgba(255, 255, 255, 1);
-      width: calc(100% - 40px);
-      line-height: 82px;
-      text-align: left;
-      margin: 10px 20px;
-      color: #4D4D4D;
-      font-size: 18px;
-      box-sizing: border-box;
-      .span {
-        margin-right: 45px;
-        padding-left: 20px;
+      .path_text {
+        color: #4d4d4d;
+        font-size: 22px;
+        line-height: 70px;
+        text-align: left;
+        padding-left: 30px;
       }
-      .color_white {
-        color: white;
+      a {
+        color: #4d4d4d; 
       }
     }
-    .tables1 {
-      width: calc(100% - 40px);
-      margin: 10px 20px;
-      padding: 20px 0px;
-      background: #ffffff;
-      .tables1_t {
-        width: 90%;
-        margin-left: 44px;
-        text-align: center;
-        .td1 {
-          background: #fcfcfc;
-          border: 2px solid #f6f6f6;
-          height: 90px;
-        }
-        .td2 {
+    .manager_msg {
+      width: 100%;
+      margin-top: 11px;
+      height: 80px;
+      background: white;
+      .img-con {
+        position: relative;
+        display: inline-block;
+        width: 14px;
+        height: 15px;
+        top: 2px;
+        margin-right: 3px;
+        img {
+          width: 100%;
           height: 100%;
-          line-height: 90px;
-          background: #f6f6f6;
-          width: 10%
+        }
+      }
+      .content {
+        display: inline-block;
+        color: #A5A5A5;
+        font-size: 16px;
+      }
+      .pwd {
+        position: relative;
+        top: 4px;
+      }
+      li {
+        float: left;
+        padding-left: 30px;
+        font-size: 16px;
+        line-height: 80px;
+        margin-right: 35px;
+        .btn {
+          height: 25px;
+          width: 55px;
+          border: none;
+          color: #ffffff;
+          margin-left: 10px;
+          background: #45B78D;
+          cursor: pointer;
+        }
+        .btn1 {
+          height: 25px;
+          width: 55px;
+          border: none;
+          color: #ffffff;
+          margin-left: 10px;
+          background: #4585B7;
+          cursor: pointer;
         }
       }
     }
-    .tables2 {
-      width: calc(100% - 40px);
-      margin: 10px 20px;
-      height: 50%;
+    .table {
+      width: 100%;
+      padding: 30px;
       background: rgba(255, 255, 255, 1);
-      box-shadow: 7px 12px 21px rgba(162, 160, 160, 0.05);
-      .project-content {
-        padding: 10px 16px 0 16px;
-        .project-top:not(:first-child) {
-          margin-left: 2%;
-        }
-        .project-top {
-          display: inline-block;
+      box-sizing: border-box;
+      margin-top: 11px;
+      .tables {
+        width: 80%;
+        height: 80px;
+        .cow1 {
+          width: 5%;
+          font-size: 16px;
+          background: #f6f6f6;
+          height: 100%;
+          line-height: 80px;
           text-align: center;
-          width: 23.1%;
-          height: 150px;
-          background: rgba(255, 255, 255, 1);
-          border-radius: 4px;
-          box-shadow: 7px 12px 21px rgba(162, 160, 160, 0.05);
-          .project-top-up {
-            font-size: 60px;
-            color: rgba(103, 103, 103, 1);
-            line-height: 80px;
-          }
-          .project-top-under {
-            font-size: 16px;
-            color: rgba(171, 171, 171, 1);
-            line-height: 80px;
-            img {
-              position: relative;
-              top: 1px;
-            }
-          }
+          color: #4d4d4d;
         }
-      }
-      .tables3 {
-        width: 100%;
-        line-height: 41px;
-        margin-left: 44px;
-        text-align: center;
-        margin-top: 41px;
-        padding-top: 29rem;
-        background: #f3f3f3;
-        td {
-          height: 50px;
-          line-height: 50px;
+        .cow2 {
+          background: #fcfcfc;
+          width: 5%;
+          font-size: 16px;
+          height: 100%;
+          color: #848484;
+          text-align: center;
+          line-height: 80px;
+        }
+        .cow2_botton {
+          border-bottom: 2px solid #f6f6f6;
+        }
+        .modify_button {
+          width: 90px;
+          height: 40px;
+          background: rgba(69, 183, 141, 1);
+          border-radius: 2px;
+          border: none;
+          color: #ffffff;
           font-size: 14px;
+          cursor: pointer;
         }
-      }
-    }
-    .hr {
-      margin-left: 55px;
-    }
-    .task-sub {
-      // width:60% ;
-      width: 90%;
-      .paging {
-        margin: 20px auto;
-        text-align: center;
       }
     }
   }

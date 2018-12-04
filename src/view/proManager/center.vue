@@ -10,9 +10,10 @@
         <li><span class="img-con"><img src="../../assets/name.png" /></span>姓名：<span class="content">{{content.name}}</span></li>
         <li v-if="roleShow"><span class="img-con"><img src="../../assets/level.png" /></span>积分等级：<span class="content" v-if="content.projectManagerIntegral">{{content.projectManagerIntegral.integralGrade.name}}</span></li>
         <li v-if="roleShow"><span class="img-con"><img src="../../assets/integral.png" /></span>积分累积：<span class="content" v-if="content.projectManagerIntegral">{{content.projectManagerIntegral.integral}}</span></li>
+        <li v-if="updateState"><span class="img-con"><img src="../../assets/level.png" /></span>开发等级：<span class="content" v-if="content.userLevel">{{content.userLevel.level}}</span></li>
         <li>
           <!-- <button class="btn1" @click="seeDetails">详情</button> -->
-          <!-- <button class="btn">升级</button> -->
+          <el-button @click="_orStaffUpdate" type="success" v-if="updateState" size="small">升级</el-button>
         </li>
       </ul>
     </div>
@@ -72,9 +73,10 @@
   </div>
 </template>
 <script>
-  import { getUerInfo, modifyPassword } from '@/api/center_request'
+  import { getUerInfo, modifyPassword, orStaffUpdate } from '@/api/request'
   import { mapMutations, mapGetters } from 'vuex'
-  let vm;
+  const SUCCESS_OK = '200'
+  let vm
   export default {
     name: "information",
     data() {
@@ -117,7 +119,8 @@
         rules: {
           pass: [{ validator: validatePass, trigger: 'blur' }],
           checkPass: [{ validator: validatePass2, trigger: 'blur' }]
-        }
+        },
+        updateState: false
       }
     },
     computed: {
@@ -139,9 +142,25 @@
       getCurrentPersionInfo () {
         getUerInfo().then(res => {
           res = res.data
-          this.$store.getters.getrole === 'PROJECT_MANAGER' ? this.roleShow = true : this.roleShow = false
+          if (res.data.isManager == 1) {
+            this.roleShow = true
+          } else if (res.data.isManager == 2) {
+            this.updateState = true
+          }
+          // this.$store.getters.getrole === 'PROJECT_MANAGER' ? this.roleShow = true : this.roleShow = false
           if (res.state === 200) {
             this.content = res.data
+          } else {
+            this.MessageError(res.message)
+          }
+        })
+      },
+      // 开发者点击升级
+      _orStaffUpdate () {
+        orStaffUpdate().then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            this.MessageSuccess(res.message)
           } else {
             this.MessageError(res.message)
           }

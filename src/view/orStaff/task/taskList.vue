@@ -9,18 +9,16 @@
       </el-select>
     </div> -->
     <div class="project-table">
-      <el-table :header-cell-style="{background:'#FAFAFA',textAlign: 'center'}" @selection-change="handleSelectionChange" :data="taskList" :stripe="true" style="width: 100%">
-        <el-table-column prop="name" type="index" align="center" label="序号" width="60">
+      <el-table :header-cell-style="{background:'#FAFAFA',textAlign: 'center'}" @selection-change="handleSelectionChange" :data="projectsList" :stripe="true" style="width: 100%">
+        <el-table-column type="index" align="center" label="序号" width="70%">
         </el-table-column>
-        <el-table-column prop="job" label="所属项目" style="width: 20%">
+        <el-table-column prop="projectBaseInfo.name" align="center" label="项目名称" style="width: 20%">
         </el-table-column>
-        <el-table-column prop="salary" label="功能模块" style="width: 20%">
+        <el-table-column prop="projectBaseInfo.startTime" align="center" label="开始时间" style="width: 20%">
         </el-table-column>
-        <!-- <el-table-column prop="zhuanzheng" label="描述" style="width: 20%">
-        </el-table-column> -->
-        <el-table-column prop="startTime" align="center" label="发布时间" style="width: 20%">
+        <el-table-column prop="projectBaseInfo.endTime" align="center" label="结束时间" style="width: 20%">
         </el-table-column>
-        <el-table-column prop="finish" align="center" label="子任务" style="width: 20%">
+        <el-table-column prop="projectStatus.text" align="center" label="状态" style="width: 20%">
         </el-table-column>
         <el-table-column align="center" label="操作">
           <template slot-scope="scope">
@@ -31,16 +29,44 @@
       </el-table>
     </div>
     <el-dialog title="详情" :visible.sync="showState" width="60%" :close-on-click-modal="false" center>
-      <el-table :header-cell-style="{background:'#FAFAFA',textAlign: 'center'}" @selection-change="handleSelectionChange" :data="moduleList" :stripe="true" style="width: 100%">
-        <el-table-column type="selection" align="center" width="50">
+      <div class="searchBar" style="margin-bottom:15px;">
+        <el-select size="small" v-model="businessValue" @change="listSearch" clearable placeholder="业务名称搜索">
+          <el-option v-for="(item, index) in businessList" :key="index" :label="item" :value="item">
+          </el-option>
+        </el-select>
+        <el-select size="small" v-model="moduleValue" @change="listSearch" clearable placeholder="模块名称搜索">
+          <el-option v-for="(item, index) in moduleList" :key="index" :label="item" :value="item">
+          </el-option>
+        </el-select>
+        <el-select size="small" v-model="functionValue" @change="listSearch" clearable placeholder="功能名称搜索">
+          <el-option v-for="(item, index) in functionList" :key="index" :label="item" :value="item">
+          </el-option>
+        </el-select>
+        <el-date-picker
+          v-model="searchTime"
+          type="date"
+          size="small"
+          @change="listSearch"
+          value-format="yyyy-MM-dd"
+          placeholder="开始时间搜索">
+        </el-date-picker>
+      </div>
+      <el-table :header-cell-style="{background:'#FAFAFA',textAlign: 'center'}" @selection-change="handleSelectionChange" :data="taskList" :stripe="true" style="width: 100%">
+        <!-- <el-table-column type="selection" align="center" width="50">
+        </el-table-column> -->
+        <el-table-column prop="name" type="index" align="center" label="序号">
         </el-table-column>
-        <el-table-column prop="name" type="index" label="序号" style="width: 20%">
+        <el-table-column prop="business" align="center" label="业务名称">
         </el-table-column>
-        <el-table-column prop="job" label="功能模块" style="width: 20%">
+        <el-table-column prop="module" align="center" label="模块名称">
         </el-table-column>
-        <el-table-column prop="salary" label="负责人" style="width: 20%">
+        <el-table-column prop="function" align="center" label="功能名称">
         </el-table-column>
-        <el-table-column prop="zhuanzheng" label="描述" style="width: 20%">
+        <el-table-column prop="startTime" align="center" label="开始时间">
+        </el-table-column>
+        <el-table-column prop="endTime" align="center" label="结束时间">
+        </el-table-column>
+        <el-table-column prop="detail" align="center" label="描述">
         </el-table-column>
         <el-table-column align="center" label="操作">
           <template slot-scope="scope">
@@ -48,9 +74,17 @@
           </template>
         </el-table-column>
       </el-table>
+      <div class="project-paging">
+        <!-- <el-button type="success" size="small">领取</el-button> -->
+        <el-pagination background layout="prev, pager, next" 
+        :page-size="size1" @current-change="handleCurrentChange1"
+        :current-page.sync="page1"
+        :total="totalElements1">
+        </el-pagination>
+      </div>
       <span slot="footer" class="dialog-footer">
-        <el-button type="success" @click="receiveAll">领 取</el-button>
-          <el-button @click="showState = false">取 消</el-button>
+        <el-button type="primary" @click="showState = false">确定</el-button>
+        <el-button @click="showState = false">取 消</el-button>
         </span>
     </el-dialog>
     <div class="project-paging">
@@ -66,7 +100,8 @@
 <script>
   let vm
   import { mapGetters, mapMutations } from 'vuex'
-  import { groupMemberList } from '@/api/request'
+  import { staffProject, staffTask, receiveTask, orStaffSelectList } from '@/api/request'
+  const SUCCESS_OK = '200'
   export default {
     data() {
       return {
@@ -76,13 +111,24 @@
         otherUsers: [],
         showState: false,
         userId: '',
-        taskList: [1,2], // 任务列表
-        moduleList: [1,2,3],
+        projectsList: [], // 任务列表
+        taskList: [],
         moduleState: false,
-        downUrl: '',
+        searchTime: '',
         page: 1,
         size: 10,
-        totalElements: 10,
+        totalElements: 0,
+        page1: 1,
+        size1: 8,
+        totalElements1: 0,
+        saveId: '',
+        businessValue: '',
+        moduleValue: '',
+        functionValue: '',
+        options: [],
+        businessList: [],
+        moduleList: [],
+        functionList: [],
         chooseModule: []
       }
     },
@@ -91,29 +137,111 @@
     },
     mounted() {
       vm = this
+      this._staffProject()
     },
     methods: {
       ...mapMutations([]),
-      handleCurrentChange() {
-        console.log(this.page)
+      handleCurrentChange () {
+        this._staffProject()
       },
-      // 获取下载模板
-      downTem() {
+      listSearch () {
+        this._staffTask()
       },
-      dataParams() {
-        return {
-          projectsId: this.getprojectId
+      handleCurrentChange1 () {
+        this._staffTask()
+      },
+      // 获取下拉框列表
+      _orStaffSelectList (type) {
+        const data = {
+          selectType: type,
+          projectId: this.saveId
         }
+        orStaffSelectList(data).then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            switch (type) {
+              case 0:
+                this.businessList = res.data
+                break;
+              case 1:
+                this.moduleList = res.data
+                break;
+              case 2:
+                this.functionList = res.data
+              default:
+                break;
+            }
+          } else {
+            this.MessageError(res.message)
+          }
+        })
+      },
+      receiveOne (item) {
+        const data = {
+          projectPlanId: item.id
+        }
+        receiveTask(data).then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            this.MessageSuccess('领取成功')
+          } else {
+            this.MessageError(res.message)
+          }
+        })
       },
       handleSelectionChange(val) {
         // console.log(val)
         this.chooseModule = val
       },
       detailGo (item) {
+        this.saveId = item.id
+        this.page1 = 1
         this.showState = true
+        this._staffTask()
+        this._orStaffSelectList(0)
+        this._orStaffSelectList(1)
+        this._orStaffSelectList(2)
         // this.$router.push('/home/staffDetail')
       },
-      receiveOne () {},
+      // 获取计划列表
+      _staffTask () {
+        const data = {
+          page: this.page1,
+          size: this.size1,
+          projectId: this.saveId,
+          business: this.businessValue,
+          module: this.moduleValue,
+          function: this.functionValue,
+          startTime: this.searchTime
+        }
+        staffTask(data).then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            this.taskList = res.data.rows
+            this.totalElements1 = res.data.total
+          } else {
+            this.MessageError(res.message)
+          }
+        })
+      },
+      // 获取项目列表
+      _staffProject () {
+        const data = {
+          page: this.page,
+          size: this.size
+        }
+        staffProject(data).then(res => {
+          res = res.data
+          // console.log(res.data)
+          if (res.state == SUCCESS_OK) {
+            this.projectsList = res.data.rows
+            this.totalElements = res.data.total
+            // console.log(this.projectsList)
+          } else {
+            this.MessageError(res.message)
+          }
+        })
+      },
       receiveAll (item) {
         if (this.chooseModule.length > 0) {
 

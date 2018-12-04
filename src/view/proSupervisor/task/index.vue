@@ -98,6 +98,7 @@
             :on-success="handleSuccess"
             :on-error="handleError"
             :on-remove="handleRemove"
+            :with-credentials='true'
             multiple>
             <el-button size="small" type="primary">上传附件</el-button>
           </el-upload>

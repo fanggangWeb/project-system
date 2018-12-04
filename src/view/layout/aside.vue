@@ -16,7 +16,7 @@
       <template v-for="item in JSON.parse(getrouters)">
         <el-menu-item v-if="!item.noShow" :key="item.path" :index="'/home'+'/'+item.path">
           <template slot="title">
-            <i v-if="item.name == '任务' || item.name == '分配'" class="el-icon-success"></i>
+            <i v-if="item.name == '任务'" class="el-icon-success"></i>
             <i v-if="item.name == '项目'" class="el-icon-document"></i>
             <i v-if="item.name == '审批'" class="el-icon-edit"></i>
             <i v-if="item.name == '评分'" class="el-icon-edit-outline"></i>
@@ -25,6 +25,8 @@
             <i v-if="item.name == '反馈'" class="el-icon-message"></i>
             <i v-if="item.name == '跟进'" class="el-icon-document"></i>
             <i v-if="item.name == '绩效'" class="el-icon-tickets"></i>
+            <i v-if="item.name == '考核'" class="el-icon-question"></i>
+            <i v-if="item.name == '分配'" class="el-icon-d-caret"></i>
             <span>{{item.name}}</span>
           </template>
         </el-menu-item>

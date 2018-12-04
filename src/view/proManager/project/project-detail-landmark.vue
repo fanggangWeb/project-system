@@ -19,7 +19,8 @@
       <el-button size="small" type="success" class="hidenBtn" @click="showState = true">
         导入表格
       </el-button>
-      <el-button size="small" @click="_exportXls" type="primary" style="margin-right:20px">导出表格</el-button>
+      <el-button size="small" @click="_exportXls" type="primary">导出表格</el-button>
+      <el-button size="small" @click="insertPlan" type="info" style="margin-right:20px">新增计划</el-button>
     </div>
     <div class="project-table">
       <el-table :header-cell-style="{background:'#FAFAFA',textAlign: 'center'}" :data="planList" :stripe="true" style="width: 100%">
@@ -36,6 +37,11 @@
         <el-table-column prop="endTime" label="结束时间" align="center">
         </el-table-column>
         <el-table-column prop="detail" label="描述" align="center">
+        </el-table-column>
+        <el-table-column label="操作" align="center">
+          <template slot-scope="scope">
+            <el-button size="small" type="primary" @click="updatePlan(scope.row)">修改</el-button>
+          </template>
         </el-table-column>
       </el-table>
     </div>
@@ -83,7 +89,7 @@
           <el-button type="primary" @click="downTem"><span style="color:white">下载excel模板</span></el-button>
         </el-col>
         <el-col :span="8">
-          <el-upload :action="this.HTTP+'/project/plan/importTemplate'" name="file" :file-list="fileList" :data="dataParams()" :on-success="isDemand" :show-file-list="false">
+          <el-upload :with-credentials='true' :action="this.HTTP+'/project/plan/importTemplate'" name="file" :file-list="fileList" :data="dataParams()" :on-success="isDemand" :show-file-list="false">
             <el-button style="background-color:#45B78D;border-color:none;color:white">上传excel表格
             </el-button>
           </el-upload>
@@ -94,11 +100,53 @@
         <el-button type="primary" @click="showState = false">确 定</el-button>
       </span>
     </el-dialog>
+    <el-dialog :close-on-click-modal="false" :title="insertTitle" :visible.sync="planShowState" width="50%" center>
+      <el-form :model="form1" ref="form1" :rules="rules1" label-width="120px">
+        <el-form-item label="业务名称" prop="business">
+          <el-input v-model="form1.business" placeholder="请输入业务名称"></el-input>
+        </el-form-item>
+        <el-form-item label="模块名称" prop="module">
+          <el-input v-model="form1.module" placeholder="请输入模块名称"></el-input>
+        </el-form-item>
+        <el-form-item label="功能名称" prop="function">
+          <el-input v-model="form1.function" placeholder="请输入功能名称"></el-input>
+        </el-form-item>
+        <el-form-item label="项目开始时间" prop="startTime">
+          <el-date-picker
+            v-model="form1.startTime"
+            type="date"
+            value-format="yyyy-MM-dd"
+            placeholder="项目开始日期">
+          </el-date-picker>
+        </el-form-item>
+        <el-form-item label="项目结束时间" prop="endTime">
+          <el-date-picker
+            v-model="form1.endTime"
+            value-format="yyyy-MM-dd"
+            type="date"
+            placeholder="项目结束日期">
+          </el-date-picker>
+        </el-form-item>
+        <!-- <el-form-item label="项目PM" prop="projectManagerId">
+          <el-select v-model="form1.projectManagerId" clearable placeholder="选择项目PM">
+            <el-option v-for="item in PMList" :key="item.id" :label="item.name" :value="item.id">
+            </el-option>
+          </el-select>
+        </el-form-item> -->
+        <el-form-item label="项目描述" prop="detail">
+          <el-input type="textarea" v-model="form1.detail" placeholder="请输入项目描述"></el-input>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button type="success" @click="submit">提 交</el-button>
+          <el-button @click="showState = false">取 消</el-button>
+        </span>
+    </el-dialog>
   </div>
 </template>
 <script>
   const SUCCESS_OK = '200'
-  import { milestoneList, milestoneDetail, addMileStone, mileStonePlanList, mileStoneXlsTem, exportXls } from '@/api/request'
+  import { milestoneList, milestoneDetail, addMileStone, mileStonePlanList, mileStoneXlsTem, exportXls, insertPlan, projectUpdatePlan } from '@/api/request'
   import { mapGetters, mapMutations } from 'vuex'
   export default {
     data() {
@@ -108,8 +156,9 @@
         showState: false,
         Visible: false,
         page: 1,
-        size: 5,
+        size: 20,
         stoneId: '',
+        planId: '',
         name: '',
         totalElements: 0,
         downUrl: '',
@@ -120,6 +169,25 @@
         uploadUrl: '',
         fileList: [],
         nextIndex: '',
+        insertTitle: '新增计划',
+        planShowState: false,
+        planState: 'insert',
+        form1: {
+          business: '',
+          module: '',
+          function: '',
+          startTime: '',
+          endTime: '',
+          detail: ''
+        },
+        rules1: {
+          business:[{required: true, message: '请输入业务名称', trigger: 'blur'}],
+          module:[{required: true, message: '请输入模块名称', trigger: 'blur'}],
+          function:[{required: true, message: '请输入功能名称', trigger: 'blur'}],
+          startTime:[{required: true, message: '请选择项目开始时间', trigger: 'blur'}],
+          endTime:[{required: true, message: '请选择项目结束时间', trigger: 'blur'}],
+          detail:[{required: true, message: '请输入项目描述', trigger: 'blur'}],
+        },
         form: {
           startTime: '',
           endTime: '',
@@ -137,6 +205,11 @@
         if (val == false) {
           this.$refs['form'].resetFields()
         }
+      },
+      planShowState: function (val, oldval) {
+        if (val == false) {
+          this.$refs['form1'].resetFields()
+        }
       }
     },
     computed: {
@@ -146,6 +219,33 @@
       this._milestoneList()
     },
     methods: {
+      insertPlan () {
+        this.form1 = {
+          business: '',
+          module: '',
+          function: '',
+          startTime: '',
+          endTime: '',
+          detail: ''
+        },
+        this.planState = 'insert'
+        this.planShowState = true
+        this.insertTitle = '新增计划'
+      },
+      updatePlan (item) {
+        this.planId = item.id
+        this.form1 = {
+          business: item.business,
+          module: item.module,
+          function: item.function,
+          startTime: item.startTime,
+          endTime: item.endTime,
+          detail: item.detail
+        },
+        this.planState = 'edit'
+        this.planShowState = true
+        this.insertTitle = '修改计划'
+      },
       changeTab(item, index) {
         this.current = index
         this.startTime = item.startTime
@@ -234,6 +334,43 @@
             })
           } else {
             console.log('error submit!!')
+            return false
+          }
+        })
+      },
+      // 提交表单
+      submit () {
+        this.$refs['form1'].validate((valid) => {
+          if (valid) {
+            if (this.planState == 'insert') {
+              this.form1.projectMilestoneId = this.stoneId
+              insertPlan(this.form1).then(res => {
+                res = res.data
+                if (res.state == SUCCESS_OK) {
+                  this.planShowState = false
+                  this.MessageSuccess(res.message)
+                  this._milestoneList()
+                } else {
+                  this.MessageError(res.message)
+                }
+              })
+            } else if (this.planState == 'edit') {
+              // 这里是修改里程碑的接口
+              this.form1.projectMilestoneId = this.stoneId
+              this.form1.id = this.planId
+              projectUpdatePlan(this.form1).then(res => {
+                res = res.data
+                if (res.state == SUCCESS_OK) {
+                  this.planShowState = false
+                  this.MessageSuccess(res.message)
+                  this._milestoneList()
+                } else {
+                  this.MessageError(res.message)
+                }
+              })
+            }
+          } else {
+            console.log('error submit!!');
             return false
           }
         })

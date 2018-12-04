@@ -19,7 +19,7 @@
       </div>
       <div class="remember-password">
         <div class="checkbox" @click="isRememberPassword = !isRememberPassword"><span v-if="isRememberPassword">√</span></div>
-        <span>记住账号</span>
+        <span style="cursor:pointer;-moz-user-select:none;" onselectstart="return false;" @click="isRememberPassword = !isRememberPassword">记住账号</span>
       </div>
       <div class="submit-button" @click="loginClick">登 录</div>
     </div>
@@ -110,7 +110,7 @@
             this.delCookie('pswd');
           }
         }
-        let data = {
+        const data = {
           username: this.accountNumber,
           password: this.password
         }
@@ -122,18 +122,17 @@
           if (res.state == SUCCESS_OK) {
             userInfo().then(res => {
               res = res.data
-              data = res.data
-              console.log(res)
+              // console.log(res)
               if (res.state == SUCCESS_OK) {
-                this.name(data.name)
-                this.position(data.position)
-                this.id(data.id)
+                this.name(res.data.name)
+                this.position(res.data.position)
+                this.id(res.data.id)
                 if (length == 1) { // 只有一种权限的拿到姓名路由后直接跳页面
                   this.role(authority)
-                  this.routers(JSON.stringify(data.userRoles[0].userMenus))
-                  this.$router.push(`/home/${data.userRoles[0].userMenus[0].path}`)
+                  this.routers(JSON.stringify(res.data.userRoles[0].userMenus))
+                  this.$router.push(`/home/${res.data.userRoles[0].userMenus[0].path}`)
                 } else { // 有两种权限或者多种权限的
-                  this.roleList = data.userRoles
+                  this.roleList = res.data.userRoles
                   this.showState = true
                 }
               } else {
@@ -141,7 +140,7 @@
               }
             })
           } else {
-            this.MessageError(1111)
+            this.MessageError(res.message)
           }
         })
       },

@@ -12,6 +12,18 @@
       </el-date-picker> -->
       <el-button class="timeSearch" style="margin-right:20px" type="success" @click="add">添加</el-button>
     </div>
+    <div class="content">
+      <div class="top">
+        <div class="name">项目名称：{{projectInfo.name}}</div>
+        <div class="customer">项目客户：{{projectInfo.customer.customerName}}</div>
+        <div class="customer">跟进人员：
+          <span v-for="(item,index) in projectInfo.salesPersons" :key="index">&nbsp;{{item.name}}</span>
+        </div>
+      </div>
+      <div class="bottom">
+        {{projectInfo.demandDesc}}
+      </div>
+    </div>
     <div class="project-table">
       <el-table :header-cell-style="{textAlign: 'center'}"  :data="list" style="width:100%">
         <el-table-column type="index" align="center" label="序号" width="60">
@@ -61,7 +73,7 @@
 <script>
   let vm
   const SUCCESS_OK = '200'
-  import { followDetail, addTaskChedule, editTaskChedule, delTaskChedule } from '@/api/request'
+  import { followDetail, addTaskChedule, editTaskChedule, delTaskChedule, saleTaskDetail } from '@/api/request'
   import { mapGetters, mapMutations } from 'vuex'
   export default {
     data() {
@@ -83,10 +95,16 @@
         rules: {
           desc:[{required: true, message: '请输入跟进详情', trigger: 'blur'}],
           // time:[{required: true, message: '请选择跟进时间', trigger: 'blur'}],
+        },
+        projectInfo: {
+          customer: {
+            customerName: ''
+          }
         }
       }
     },
     mounted() {
+      this._saleTaskDetail()
       this._followDetail()
     },
     computed: {
@@ -100,6 +118,16 @@
       }
     },
     methods: {
+      _saleTaskDetail () {
+        saleTaskDetail({id: this.gettaskId}).then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            this.projectInfo = res.data
+          } else {
+            this.MessageError(res.message)
+          }
+        })
+      },
       _followDetail () { // 业务员跟进列表
         let data = {
           page: this.page,
@@ -228,8 +256,32 @@
         // cursor: pointer;
       }
     }
+    .content {
+      padding: 20px;
+      width: 100%;
+      box-sizing: border-box;
+      color: rgb(144, 147, 153);
+      .top {
+        background: white;
+        height: 40px;
+        line-height: 40px;
+        padding: 0 20px;
+      }
+      .name {
+        float: left;
+      }
+      .customer {
+        float: right;
+        margin-left: 20px;
+      }
+      .bottom {
+        line-height: 30px;
+        padding: 10px 20px;
+        background: white;
+      }
+    }
     .project-table {
-      padding: 20px 20px 0 20px;
+      padding: 0px 20px 0 20px;
     }
     .project-paging {
       text-align: center;

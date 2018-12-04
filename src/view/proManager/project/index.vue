@@ -45,13 +45,32 @@
         </el-table-column>
         <el-table-column prop="projectBaseInfo.endTime" align="center" label="结束时间" style="width: 20%">
         </el-table-column>
+        <el-table-column prop="projectStatus.text" align="center" label="状态" style="width: 20%">
+        </el-table-column>
         <el-table-column align="center" label="操作">
           <template slot-scope="scope">
+            <el-button type="success" size="small" @click="changeStatus(scope.row)">更改状态</el-button>
             <el-button type="primary" size="small" @click="detailGo(scope.row)">详情</el-button>
           </template>
         </el-table-column>
       </el-table>
     </div>
+    <el-dialog :title="oneName+'的状态修改'" :close-on-click-modal="false" :visible.sync="showState" width="35%" center>
+      <el-row style="margin-top:20px">
+        <el-col :offset="5" :span="6">
+          <span style="line-height:40px;font-size:16px;">请选择状态：</span>
+        </el-col>
+        <el-col :span="8">
+          <el-select v-model="statusId">
+            <el-option v-for="(item,index) in projectStatusList" :key="index" :value="item.id" :label="item.text"></el-option>
+          </el-select>
+        </el-col>
+      </el-row>
+      <span slot="footer" class="dialog-footer">
+          <el-button @click="showState = false">取 消</el-button>
+          <el-button type="primary" @click="confirm">确 定</el-button>
+        </span>
+    </el-dialog>
     <div class="project-paging">
       <el-pagination background layout="prev, pager, next" 
       :page-size="size" @current-change="handleCurrentChange"
@@ -66,7 +85,7 @@
   let vm
   // path: '/home/project' // 项目经理项目首页
   const SUCCESS_OK = '200'
-  import { allProSummary, proProjectList } from '@/api/request'
+  import { allProSummary, proProjectList, allProjectStatusList, changeProjectStatus } from '@/api/request'
   import { mapGetters, mapMutations } from 'vuex'
   export default {
     data() {
@@ -85,24 +104,52 @@
         }],
         summary: {},
         projectStatus: '',
+        showState: false,
         page: 1,
         size: 5,
         projectsList: [],
+        projectStatusList: [],
+        statusId: '',
+        oneName: '',
+        oneId: '',
         status: {},
         totalElements: 10,
         projectName: ''
       }
     },
     watch: {},
-    mounted() {
+    mounted () {
       this._allProSummary()
       this._proProjectList()
+      this._allProjectStatusList()
     },
     methods: {
       ...mapMutations(['projectId']),
       detailGo (item) {
         this.projectId(item.id)
         this.$router.push({path: '/home/projectDetail'})
+      },
+      changeStatus (item) {
+        this.oneName = item.projectBaseInfo.name
+        this.oneId = item.id
+        this.statusId = item.projectStatus.id
+        this.showState = true
+      },
+      confirm () {
+        const data = {
+          projectId: this.oneId,
+          statusId: this.statusId
+        }
+        changeProjectStatus(data).then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            this.MessageSuccess(res.message)
+            this.showState = false
+            this._proProjectList()
+          } else {
+            this.MessageError(res.message)
+          }
+        })
       },
       // 获取头部所有项目的统计
       _allProSummary () {
@@ -126,10 +173,21 @@
         }
         proProjectList(data).then(res => {
           res = res.data
-          console.log(res.data)
+          // console.log(res.data)
           if (res.state == SUCCESS_OK) {
             this.projectsList = res.data.rows
             this.totalElements = res.data.total
+          } else {
+            this.MessageError(res.message)
+          }
+        })
+      },
+      // 获取所有状态列表进行更改状态
+      _allProjectStatusList () {
+        allProjectStatusList().then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            this.projectStatusList = res.data
           } else {
             this.MessageError(res.message)
           }
@@ -148,6 +206,7 @@
       },
       handleCurrentChange() {
         // console.log(this.page)
+        this._proProjectList()
       }
     }
   }

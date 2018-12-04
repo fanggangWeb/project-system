@@ -6,36 +6,43 @@
         <div class="searchProject">
           <el-input @change="nameSearch" placeholder="项目名称" v-model="projectName" clearable>
           </el-input>
-          <a href="" @click.prevent="nameSearch"><i class="el-icon-search"></i></a>
+          <!-- <a href="" @click.prevent="nameSearch"><i class="el-icon-search"></i></a> -->
         </div>
         <div class="selectChoose">
-          <el-select v-model="projectStatus" clearable placeholder="跟进人员">
+          <el-select v-model="userId" @change="nameSearch" clearable placeholder="跟进人员">
             <el-option v-for="item in followList" :key="item.id" :label="item.name" :value="item.id">
             </el-option>
           </el-select>
         </div>
-        <el-button class="addProject" type="success" @click="showState = true">指派任务</el-button>
+        <el-button class="addProject" type="success" @click="insertTask">指派任务</el-button>
       </div>
     </div>
     <div class="project-table">
       <el-table :header-cell-style="{textAlign: 'center'}"  :data="projectsList" :stripe="true" style="width: 100%">
         <el-table-column type="index" align="center" label="序号" width="60">
         </el-table-column>
-        <el-table-column prop="name" label="项目名称">
+        <el-table-column prop="name" align="center" label="项目名称">
         </el-table-column>
-        <el-table-column prop="name" label="客户名称">
+        <el-table-column prop="customer.customerName" align="center" label="客户名称">
         </el-table-column>
-        <el-table-column prop="name" label="跟进人员">
+        <el-table-column prop="salesPersons" align="center" label="跟进人员">
+          <template slot-scope="scope">
+            <span style="cursor:pointer" v-for="(item,index) in scope.row.salesPersons" @click="bonus(item,scope.row)" :key="index">
+              {{item.name}}
+            </span>
+          </template>
         </el-table-column>
-        <el-table-column prop="name" label="跟进情况">
+        <el-table-column prop="cheduleCount" align="center" label="跟进次数">
         </el-table-column>
-        <el-table-column prop="startTime" align="center" label="创建时间">
+        <el-table-column prop="saleTaskStatusType.name" align="center" label="状态">
+        </el-table-column>
+        <el-table-column prop="createTime" align="center" label="创建时间">
         </el-table-column>
         <el-table-column align="center" label="操作">
           <template slot-scope="scope">
-            <el-button type="success" size="small" @click="detailGo(scope.row)">修改</el-button>
+            <el-button type="success" size="small" @click="edit(scope.row)">修改</el-button>
             <el-button type="primary" size="small" @click="detailGo(scope.row)">详情</el-button>
-            <el-button type="danger" size="small" @click="detailGo(scope.row)">签单</el-button>
+            <!-- <el-button type="danger" size="small" @click="detailGo(scope.row)">签单</el-button> -->
             <!-- <el-button type="danger" size="small" disabled>已签单</el-button> -->
           </template>
         </el-table-column>
@@ -49,8 +56,26 @@
         <el-form-item label="客户名称" prop="customer">
           <el-input v-model="form.customer" placeholder="请输入客户名称"></el-input>
         </el-form-item>
+        <el-form-item label="联系电话" prop="telephone">
+          <el-input v-model="form.telephone" placeholder="请输入联系电话"></el-input>
+        </el-form-item>
         <el-form-item label="客户公司" prop="corporationName">
           <el-input v-model="form.corporationName" placeholder="请输入客户公司"></el-input>
+        </el-form-item>
+        <el-form-item label="QQ号码" prop="qq">
+          <el-input v-model="form.qq" placeholder="请输入QQ号码"></el-input>
+        </el-form-item>
+        <el-form-item label="微信" prop="weixin">
+          <el-input v-model="form.weixin" placeholder="请输入微信号码"></el-input>
+        </el-form-item>
+        <el-form-item label="区域" prop="region">
+          <el-input v-model="form.region" placeholder="请输入区域"></el-input>
+        </el-form-item>
+        <el-form-item label="渠道来源" prop="source">
+          <el-input v-model="form.source" placeholder="请输入渠道来源"></el-input>
+        </el-form-item>
+        <el-form-item label="需求编号" prop="demandNumber">
+          <el-input v-model="form.demandNumber" placeholder="请输入需求编号"></el-input>
         </el-form-item>
         <el-form-item label="跟进人员" prop="follow">
           <el-select v-model="form.follow" clearable multiple placeholder="选择跟进人员">
@@ -58,20 +83,6 @@
             </el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="联系电话" prop="telephone">
-          <el-input v-model="form.telephone" placeholder="请输入联系电话"></el-input>
-        </el-form-item>
-        <!-- <el-form-item label="添加附件">
-          <el-upload
-            class="upload-demo"
-            action="https://jsonplaceholder.typicode.com/posts/"
-            :on-success="handleSuccess"
-            :on-error="handleError"
-            multiple
-            :file-list="form.fileList">
-            <el-button size="small" type="primary">上传附件</el-button>
-          </el-upload>
-        </el-form-item> -->
         <el-form-item label="项目简介" prop="desc">
           <el-input type="textarea" v-model="form.desc" placeholder="请输入项目简介"></el-input>
         </el-form-item>
@@ -93,7 +104,8 @@
 
 <script>
   let vm
-  import { getDepartmentUsersList, saleReleaseTask } from '@/api/request'
+  const SUCCESS_OK = '200'
+  import { getDepartmentUsersList, saleReleaseTask, salesFollowList, taskUpdate, addSaleBonus } from '@/api/request'
   import { mapGetters, mapMutations } from 'vuex'
   // 电话号码验证
   let isvalidPhone = (str) => {
@@ -112,22 +124,29 @@
   export default {
     data() {
       return {
+        editState: 'add',
         followList: [],
         projectStatus: '',
         page: 1,
         size: 10,
-        projectsList: [1,2],
+        projectsList: [],
         status: {},
         totalElements: 10,
         projectName: '',
         showState: false,
+        userId: '',
         form: {
           name: '',
           customer: '',
           follow: [],
           telephone: '',
           desc: '',
-          corporationName: ''
+          corporationName: '',
+          region: '',
+          source: '',
+          demandNumber: '',
+          qq: '',
+          weixin: ''
         },
         rules: {
           name:[{required: true, message: '请输入项目名称', trigger: 'blur'}],
@@ -142,21 +161,88 @@
     watch: {
       showState: function (val, oldval) {
         if (val == false) {
+          this.form = {
+            name: '',
+            customer: '',
+            follow: [],
+            telephone: '',
+            desc: '',
+            corporationName: ''
+          }
           this.$refs['form'].resetFields();
         }
       }
     },
     mounted() {
       this.getDepartmentUsersList()
+      this._salesFollowList()
     },
     methods: {
-      ...mapMutations([]),
+      ...mapMutations(['projectId']),
       // 获取本部门人员列表
       getDepartmentUsersList () {
         getDepartmentUsersList({ page: 1, size: 100 }).then(res => {
           res = res.data
           this.followList = res.data.rows
         })
+      },
+      bonus (item, task) {
+        this.$prompt('分配给'+item.name+'的奖金', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          inputPattern: /^[\s\S]*.*[^\s][\s\S]*$/,
+          inputErrorMessage: '请输入奖金'
+        }).then(({value}) => {
+          const data = {
+            bonus: value,
+            taskId: task.id,
+            userId: item.id
+          }
+          addSaleBonus(data).then(res => {
+            res = res.data
+            if (res.state == SUCCESS_OK) {
+              this.MessageSuccess(res.message)
+            } else {
+              this.MessageError(res.message)
+            }
+          })
+        }).catch(() => {
+        })
+      },
+      insertTask () {
+        this.editState = 'add'
+        this.showState = true
+        this.form = {
+          name: '',
+          customer: '',
+          follow: [],
+          telephone: '',
+          desc: '',
+          corporationName: '',
+          region: '',
+          source: '',
+          demandNumber: '',
+          qq: '',
+          weixin: ''
+        }
+      },
+      edit (item) {
+        this.editState = 'edit'
+        this.showState = true
+        this.form.name = item.name
+        this.form.customer = item.customer.customerName
+        this.form.telephone = item.customer.customerMobile
+        this.form.desc = item.demandDesc
+        this.form.corporationName = item.customer.corporationName
+        this.form.id = item.id
+        this.form.region = item.customer.region
+        this.form.source = item.source
+        this.form.demandNumber = item.demandNumber
+        this.form.qq = item.customer.qq
+        this.form.weixin = item.customer.weixin
+        for (let i = 0; i < item.salesPersons.length; i++) {
+          this.form.follow.push(item.salesPersons[i].id)
+        }
       },
       handleSuccess (response, file, fileList) {
         console.log(response)
@@ -165,40 +251,95 @@
         this.MessageError('上传附件失败')
       },
       detailGo (item) {
-        this.projectId(item)
+        this.projectId(item.id)
         this.$router.push({path: '/home/busSuperfeedbackDetail'})
       },
-      nameSearch () {},
+      _salesFollowList () {
+        const data = {
+          projectName: this.projectName,
+          page: this.page,
+          size: this.size,
+          userId: this.userId
+        }
+        salesFollowList(data).then(res => {
+          res = res.data
+          if (res.state == SUCCESS_OK) {
+            this.projectsList = res.data.rows
+            this.totalElements = res.data.total
+          } else {
+            this.MessageError(res.message)
+          }
+        })
+      },
+      nameSearch () {
+        this.page = 1
+        this._salesFollowList()
+      },
       jump (data) {
         this.$router.push(data)
       },
       handleCurrentChange() {
-        console.log(this.page)
+        this._salesFollowList()
       },
       // 提交表单
       submit () {
         this.$refs['form'].validate((valid) => {
           if (valid) {
-            const data = {
-              name: this.form.name,
-              customer: {
-                customerName: this.form.customer,
-                customerMobile: this.form.telephone,
-                corporationName: this.form.corporationName
-              },
-              salesPersons: this.form.follow,
-              demandDesc: this.form.desc
-            }
-            saleReleaseTask(data).then(res => {
-              res = res.data
-              console.log(res)
-              if (res.state === 200) {
-                this.MessageSuccess(res.message)
-                this.showState = false
-              } else {
-                this.MessageError(res.message)
+            if (this.editState == 'add') {
+              const data = {
+                name: this.form.name,
+                customer: {
+                  customerName: this.form.customer,
+                  customerMobile: this.form.telephone,
+                  corporationName: this.form.corporationName,
+                  region: this.form.source,
+                  qq: this.form.qq,
+                  weixin: this.form.weixin
+                },
+                salesPersons: this.form.follow,
+                demandDesc: this.form.desc,
+                source: this.form.source,
+                demandNumber: this.form.demandNumber
               }
-            })
+              saleReleaseTask(data).then(res => {
+                res = res.data
+                console.log(res)
+                if (res.state === 200) {
+                  this.MessageSuccess(res.message)
+                  this.showState = false
+                  this._salesFollowList()
+                } else {
+                  this.MessageError(res.message)
+                }
+              })
+            } else if (this.editState == 'edit') {
+              const data = {
+                name: this.form.name,
+                customer: {
+                  customerName: this.form.customer,
+                  customerMobile: this.form.telephone,
+                  corporationName: this.form.corporationName,
+                  region: this.form.source,
+                  qq: this.form.qq,
+                  weixin: this.form.weixin
+                },
+                salesPersons: this.form.follow,
+                demandDesc: this.form.desc,
+                id: this.form.id,
+                source: this.form.source,
+                demandNumber: this.form.demandNumber
+              }
+              taskUpdate(data).then(res=> {
+                res = res.data
+                if (res.state == SUCCESS_OK) {
+                  this.MessageSuccess(res.message)
+                  this.showState = false
+                  this._salesFollowList()
+                } else {
+                  this.MessageError(res.message)
+                }
+              })
+            }
           } else {
             console.log('error submit!!');
             return false

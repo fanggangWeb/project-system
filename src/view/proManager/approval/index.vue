@@ -9,7 +9,7 @@
             <router-link to="/home/approval" exact>日任务审批</router-link>
           </li>
           <!-- <li>
-            <router-link to="/home/approval/transfer">人员借调审批</router-link>
+            <router-link to="/home/approval/transfer">借调审批</router-link>
           </li> -->
           <!-- <li>
             <router-link to="/home/approval/salary">调薪审批</router-link>
@@ -25,17 +25,15 @@
   import { mapGetters, mapMutations } from 'vuex'
   export default {
     data() {
-      return {
-      }
+      return {}
     },
     computed: {
       ...mapGetters([])
     },
     watch: {
     },
-    mounted() {
+    mounted () {
       vm = this
-      console.log(this.$route)
     },
     methods: {
       ...mapMutations([]),
